@@ -1035,6 +1035,8 @@ class StableDiffusionPipeline(
         self._num_timesteps = len(timesteps)
         h_vecs = []
         grad_list = []
+        all_probs_cond = []
+        all_probs_uncond = []
         for i, t in enumerate(timesteps):
             if self.interrupt:
                 continue
@@ -1058,9 +1060,11 @@ class StableDiffusionPipeline(
                 mode=mode,
                 ret_h = ret_h
             )
-            noise_pred,h,grads = output
+            noise_pred,h,grads,probs_c,probs_u = output
             h_vecs.append(h)
             grad_list.append(grads)
+            if probs_c is not None : all_probs_cond.append(probs_c.mean(dim=0).numpy())   # [2] (mean over batch)
+            if probs_u is not None : all_probs_uncond.append(probs_u.mean(dim=0).numpy())
 
             # perform guidance
             if self.do_classifier_free_guidance:
@@ -1092,6 +1096,25 @@ class StableDiffusionPipeline(
 
             if XLA_AVAILABLE:
                 xm.mark_step()
+        if probs_u is not None:
+            import matplotlib.pyplot as plt
+            import numpy as np
+            all_probs_cond = np.stack(all_probs_cond)
+            all_probs_uncond = np.stack(all_probs_uncond)
+
+            plt.figure(figsize=(10, 4))
+            plt.plot(all_probs_cond[:, 0], label="Cond → Cluster 0")
+            plt.plot(all_probs_cond[:, 1], label="Cond → Cluster 1")
+            plt.plot(all_probs_uncond[:, 0], label="Uncond → Cluster 0", linestyle='--')
+            plt.plot(all_probs_uncond[:, 1], label="Uncond → Cluster 1", linestyle='--')
+            plt.xlabel("Timestep")
+            plt.ylabel("Avg. Cluster Probability")
+            plt.title("Cluster Identity Consistency Over Time")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig("cluster_consistency_plot.png")
+
 
         if not output_type == "latent":
             image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False, generator=generator)[

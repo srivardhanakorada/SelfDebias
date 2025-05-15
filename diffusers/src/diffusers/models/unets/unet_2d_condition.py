@@ -1115,6 +1115,7 @@ class UNet2DConditionModel(
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
         store = None
+        probs_c, probs_u = None, None
         centroid_path = "centroids/centroids.pt"
         all_timesteps = [1, 21, 41, 61, 81, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 521, 541, 561, 581, 601, 621, 641, 661, 681, 701, 721, 741, 761, 781, 801, 821, 841, 861, 881, 901, 921, 941, 961, 981]
         current_step_index = all_timesteps.index(int(timestep.item()))
@@ -1316,7 +1317,7 @@ class UNet2DConditionModel(
                 raise IOError("Classifier checkpoint not found", checkpoint_path)
 
             if mode == "distribution":
-                grads = compute_distribution_gradients(
+                grads, probs_c, probs_u = compute_distribution_gradients(
                     sample=sample,
                     timestep=current_step_index,
                     checkpoint_path=checkpoint_path,
@@ -1383,6 +1384,6 @@ class UNet2DConditionModel(
 
         if not return_dict:
             if ret_h: return sample, h, None
-            else: return sample, None, store
+            else: return sample, None, store, probs_c, probs_u
 
         return UNet2DConditionOutput(sample=sample)

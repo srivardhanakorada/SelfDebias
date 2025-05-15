@@ -37,10 +37,10 @@ def save_comparisons(folder1, folder2, out_dir="outputs/comparison", n=10):
         combo.paste(img2, (img1.width, 0))
         combo.save(os.path.join(out_dir, f"compare_{idx:04d}.png"))
 
-f_orig, m_orig = count_gender("outputs/original")
-f_deb, m_deb = count_gender("outputs/debiased")
+f_orig, m_orig = count_gender("our_outputs/original")
+f_deb, m_deb = count_gender("our_outputs/debiased")
 
 print(f"Original → Female: {f_orig} | Male: {m_orig} | Ratio (M|F) : {m_orig/f_orig}")
 print(f"Debiased → Female: {f_deb} | Male: {m_deb} | Ratio (M|F) : {m_deb/f_deb}")
 
-save_comparisons("outputs/original", "outputs/debiased", n=10)
+save_comparisons("our_outputs/original", "our_outputs/debiased", n=4)

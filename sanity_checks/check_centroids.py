@@ -7,6 +7,7 @@ from glob import glob
 from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
+import clip
 
 # === CONFIG ===
 centroids_path = "centroids/centroids.pt"
@@ -35,27 +36,47 @@ class HToCLIPJointContrast(nn.Module):
         x = torch.cat([h, t_emb], dim=-1)
         return F.normalize(self.mlp(x), dim=-1)
 
-# --- Load model and centroids ---
+# --- Load projection model and centroids ---
 model = HToCLIPJointContrast().to(device)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 centroids = torch.load(centroids_path)[version][timestep]  # [k, 512]
 
-# --- Predicted CLIP vectors ---
+# --- Load CLIP for true label inference ---
+clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
+clip_model.eval()
+with torch.no_grad():
+    text_tokens = clip.tokenize(["man", "woman"]).to(device)
+    text_features = clip_model.encode_text(text_tokens)  # [2, 512]
+    text_features = F.normalize(text_features, dim=-1)
+
+# --- Collect projected and true embeddings and infer labels ---
 triplet_paths = sorted(glob(os.path.join(triplet_dir, "*.pt")))[:sample_size]
 z_pred_list = []
+z_actual_list = []
+labels = []
 
-for path in tqdm(triplet_paths, desc="Projecting h[t] with model"):
+for path in tqdm(triplet_paths, desc="Collecting embeddings and labels"):
     data = torch.load(path)
     h = data[version][timestep]["h"].unsqueeze(0).to(device).float()
+    clip_base = data[version][timestep]["clip_base"].unsqueeze(0).to(device)
     t_tensor = torch.tensor([timestep], device=device)
+
     with torch.no_grad():
-        z = model(h, t_tensor).squeeze(0).cpu()
-    z_pred_list.append(z)
+        z_pred = model(h, t_tensor)                # [1, 512]
+        clip_base = F.normalize(clip_base, dim=-1) # [1, 512]
+        sim = F.cosine_similarity(clip_base, text_features)  # [1, 2]
+        label = torch.argmax(sim, dim=-1).item()   # 0 = man, 1 = woman
+
+    z_pred_list.append(z_pred.squeeze(0).cpu())
+    z_actual_list.append(clip_base.squeeze(0).cpu())
+    labels.append(label)
 
 z_pred = torch.stack(z_pred_list).numpy()
+z_actual = torch.stack(z_actual_list).numpy()
+labels = np.array(labels)
 
-# --- UMAP: predicted vectors + centroids ---
+# --- UMAP: predicted embeddings + centroids ---
 reducer = umap.UMAP()
 umap_pred = reducer.fit_transform(np.vstack([z_pred, centroids.numpy()]))
 pred_umap = umap_pred[:-centroids.shape[0]]
@@ -70,13 +91,7 @@ plt.tight_layout()
 plt.savefig("umap_predicted_clip_t25.png")
 plt.close()
 
-# --- UMAP: true CLIP vectors ---
-z_actual_list = []
-for path in tqdm(triplet_paths, desc="Loading true CLIP embeddings"):
-    data = torch.load(path)
-    z_actual_list.append(data[version][timestep]["clip_base"])
-z_actual = torch.stack(z_actual_list).numpy()
-
+# --- UMAP: true CLIP embeddings ---
 reducer = umap.UMAP()
 umap_actual = reducer.fit_transform(z_actual)
 
@@ -88,4 +103,17 @@ plt.tight_layout()
 plt.savefig("umap_actual_clip_t25.png")
 plt.close()
 
-print("Saved: umap_predicted_clip_t25.png and umap_actual_clip_t25.png")
+# --- UMAP: predicted embeddings colored by true label ---
+reducer = umap.UMAP()
+umap_by_label = reducer.fit_transform(z_pred)
+
+plt.figure(figsize=(8, 6))
+plt.scatter(umap_by_label[labels == 0][:, 0], umap_by_label[labels == 0][:, 1], s=10, label="Man")
+plt.scatter(umap_by_label[labels == 1][:, 0], umap_by_label[labels == 1][:, 1], s=10, label="Woman")
+plt.title("Projected CLIP Embeddings (t=25) Labeled by True Gender")
+plt.legend()
+plt.tight_layout()
+plt.savefig("umap_predicted_clip_by_true_label_t25.png")
+plt.close()
+
+print("Saved: umap_predicted_clip_t25.png, umap_actual_clip_t25.png, umap_predicted_clip_by_true_label_t25.png")
