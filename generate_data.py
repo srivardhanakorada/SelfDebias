@@ -9,10 +9,11 @@ from PIL import Image
 parser = argparse.ArgumentParser()
 parser.add_argument('--start', type=int, required=True)
 parser.add_argument('--end', type=int, required=True)
-parser.add_argument('--gpu_id', type=int, required=True)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #KAGGLE: use this line to detect the GPU device in Kaggle
+# parser.add_argument('--gpu_id', type=int, required=True)
 args = parser.parse_args()
 
-device = f'cuda:{args.gpu_id}'
+# device = f'cuda:{args.gpu_id}'
 seed = 8000 + args.start
 BATCH_SIZE = 100
 PROMPT = "a photo of a person, single person, single face, ultra detailed, raw photo, realistic face"
@@ -21,10 +22,11 @@ NEG_PROMPT = "(((deformed))), grayscale, closeup, cartoonish, unrealistic, blurr
 clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
 clip_model.eval()
 
-os.makedirs("data",exist_ok=True)
-os.makedirs("data/images",exist_ok=True)
-os.makedirs("data/h",exist_ok=True)
-os.makedirs("data/clip",exist_ok=True)
+# KAGGLE: the below directories were created in /kaggle/working
+# os.makedirs("data",exist_ok=True)
+# os.makedirs("data/images",exist_ok=True)
+# os.makedirs("data/h",exist_ok=True)
+# os.makedirs("data/clip",exist_ok=True)
 
 pipeline = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to(device)
 for img_id in tqdm(range(args.start, args.end),desc="Vanilla Generation"):
@@ -37,11 +39,11 @@ for img_id in tqdm(range(args.start, args.end),desc="Vanilla Generation"):
         ret_h=True
     )
     img = result.images[0]
-    img.save(f"data/images/{img_id:05d}.png")
+    img.save(f"/kaggle/temp/data/images/{img_id:05d}.png") # KAGGLE: save the image in /kaggle/temp/data/images
     h_list = [h_vecs[t][0].half().cpu() for t in range(len(h_vecs))]
     temp = [h_vecs[t][1].half().cpu() for t in range(len(h_vecs))]
     h_list.extend(temp)
-    torch.save(h_list, f"data/h/{img_id:05d}.pt")
-    image_input = clip_preprocess(Image.open(f"data/images/{img_id:05d}.png")).unsqueeze(0).to(device)
+    torch.save(h_list, f"/kaggle/temp/data/h/{img_id:05d}.pt") # KAGGLE: save the h_vecs in /kaggle/temp/data/h
+    image_input = clip_preprocess(Image.open(f"/kaggle/temp/data/images/{img_id:05d}.png")).unsqueeze(0).to(device) # KAGGLE: preprocess the image and move it to GPU
     with torch.no_grad(): clip_vec = clip_model.encode_image(image_input).squeeze().half().cpu()
-    torch.save(clip_vec, f"data/clip/{img_id:05d}.pt")
+    torch.save(clip_vec, f"/kaggle/temp/data/clip/{img_id:05d}.pt") # KAGGLE: save the clip_vec in /kaggle/temp/data/clip
