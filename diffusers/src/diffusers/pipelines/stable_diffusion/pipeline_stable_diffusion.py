@@ -1060,7 +1060,15 @@ class StableDiffusionPipeline(
                 mode=mode,
                 ret_h = ret_h
             )
-            noise_pred,h,grads,probs_c,probs_u = output
+            noise_pred = None
+            h = None
+            grads = None
+            probs_c = None
+            probs_u = None
+            if(ret_h):
+                noise_pred,h,grads = output
+            else:
+                noise_pred,h,grads,probs_c,probs_u = output
             h_vecs.append(h)
             grad_list.append(grads)
             if probs_c is not None : all_probs_cond.append(probs_c.mean(dim=0).numpy())   # [2] (mean over batch)
