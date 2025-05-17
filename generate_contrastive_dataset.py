@@ -18,7 +18,7 @@ preprocess_aug = T.Compose([
 ])
 
 # Paths
-H_DIR = "/kaggle/input/h-part1-generated/kaggle/temp/data/h_part1"
+H_DIR = "/kaggle/input/h-part2-generated/kaggle/temp/data/h_part2"
 IMG_DIR = "/kaggle/input/images-generated"
 OUT_DIR = "/kaggle/temp/contrastive_triplets"
 os.makedirs(OUT_DIR, exist_ok=True)
