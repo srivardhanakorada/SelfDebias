@@ -14,14 +14,14 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-# from .helper_hclassify import (
-#     compute_sample_gradients, 
-#     compute_distribution_gradients, 
-# )
-from .new_helper_hclassify import (
+from .helper_hclassify import (
     compute_sample_gradients, 
     compute_distribution_gradients, 
 )
+# from .new_helper_hclassify import (
+#     compute_sample_gradients, 
+#     compute_distribution_gradients, 
+# )
 import os
 
 import torch
@@ -1287,57 +1287,57 @@ class UNet2DConditionModel(
         h = sample.clone().detach()
 
         # Check if vanilla or guided generation
-        # if loss_strength > 1:
-        #     if not os.path.exists(checkpoint_path):
-        #         raise IOError("Classifier checkpoint not found", checkpoint_path)
-
-        #     if mode == "distribution":
-        #         grads = compute_distribution_gradients(
-        #             sample=sample, 
-        #             timestep=current_step_index, 
-        #             checkpoint_path=checkpoint_path, 
-        #             loss_strength=loss_strength,
-        #             temperature=8
-        #         )
-        #         store = (grads*scaling_strength).clone().detach()
-        #     elif mode == "sample":
-        #         grads = compute_sample_gradients(
-        #             sample=sample, 
-        #             timestep=current_step_index, 
-        #             class_index=0,              # generate samples of 0th class only
-        #             checkpoint_path=checkpoint_path, 
-        #         )
-        #     else:
-        #         raise NotImplementedError
-                
-        #     sample = sample.detach() - grads * scaling_strength
-
         if loss_strength > 1:
             if not os.path.exists(checkpoint_path):
                 raise IOError("Classifier checkpoint not found", checkpoint_path)
 
             if mode == "distribution":
-                grads, probs_c, probs_u = compute_distribution_gradients(
-                    sample=sample,
-                    timestep=current_step_index,
-                    checkpoint_path=checkpoint_path,
-                    centroid_path=centroid_path,
+                grads = compute_distribution_gradients(
+                    sample=sample, 
+                    timestep=current_step_index, 
+                    checkpoint_path=checkpoint_path, 
                     loss_strength=loss_strength,
-                    temperature=8,
+                    temperature=8
                 )
-                store = (grads*(scaling_strength*10**4)).clone().detach()
+                store = (grads*scaling_strength).clone().detach()
             elif mode == "sample":
                 grads = compute_sample_gradients(
-                    sample=sample,
-                    timestep=current_step_index,
-                    class_index=0,
-                    checkpoint_path=checkpoint_path,
-                    centroid_path=centroid_path
+                    sample=sample, 
+                    timestep=current_step_index, 
+                    class_index=0,              # generate samples of 0th class only
+                    checkpoint_path=checkpoint_path, 
                 )
             else:
                 raise NotImplementedError
+                
+            sample = sample.detach() - grads * scaling_strength
 
-            sample = sample.detach() - grads * (scaling_strength *  10**4)
+        # if loss_strength > 1:
+        #     if not os.path.exists(checkpoint_path):
+        #         raise IOError("Classifier checkpoint not found", checkpoint_path)
+
+        #     if mode == "distribution":
+        #         grads, probs_c, probs_u = compute_distribution_gradients(
+        #             sample=sample,
+        #             timestep=current_step_index,
+        #             checkpoint_path=checkpoint_path,
+        #             centroid_path=centroid_path,
+        #             loss_strength=loss_strength,
+        #             temperature=8,
+        #         )
+        #         store = (grads*(scaling_strength*10**4)).clone().detach()
+        #     elif mode == "sample":
+        #         grads = compute_sample_gradients(
+        #             sample=sample,
+        #             timestep=current_step_index,
+        #             class_index=0,
+        #             checkpoint_path=checkpoint_path,
+        #             centroid_path=centroid_path
+        #         )
+        #     else:
+        #         raise NotImplementedError
+
+        #     sample = sample.detach() - grads * (scaling_strength *  10**4)
 
 
 

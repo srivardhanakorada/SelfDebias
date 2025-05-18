@@ -1096,24 +1096,24 @@ class StableDiffusionPipeline(
 
             if XLA_AVAILABLE:
                 xm.mark_step()
-        if probs_u is not None:
-            import matplotlib.pyplot as plt
-            import numpy as np
-            all_probs_cond = np.stack(all_probs_cond)
-            all_probs_uncond = np.stack(all_probs_uncond)
+        # if probs_u is not None:
+        #     import matplotlib.pyplot as plt
+        #     import numpy as np
+        #     all_probs_cond = np.stack(all_probs_cond)
+        #     all_probs_uncond = np.stack(all_probs_uncond)
 
-            plt.figure(figsize=(10, 4))
-            plt.plot(all_probs_cond[:, 0], label="Cond → Cluster 0")
-            plt.plot(all_probs_cond[:, 1], label="Cond → Cluster 1")
-            plt.plot(all_probs_uncond[:, 0], label="Uncond → Cluster 0", linestyle='--')
-            plt.plot(all_probs_uncond[:, 1], label="Uncond → Cluster 1", linestyle='--')
-            plt.xlabel("Timestep")
-            plt.ylabel("Avg. Cluster Probability")
-            plt.title("Cluster Identity Consistency Over Time")
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            plt.savefig("cluster_consistency_plot.png")
+        #     plt.figure(figsize=(10, 4))
+        #     plt.plot(all_probs_cond[:, 0], label="Cond → Cluster 0")
+        #     plt.plot(all_probs_cond[:, 1], label="Cond → Cluster 1")
+        #     plt.plot(all_probs_uncond[:, 0], label="Uncond → Cluster 0", linestyle='--')
+        #     plt.plot(all_probs_uncond[:, 1], label="Uncond → Cluster 1", linestyle='--')
+        #     plt.xlabel("Timestep")
+        #     plt.ylabel("Avg. Cluster Probability")
+        #     plt.title("Cluster Identity Consistency Over Time")
+        #     plt.legend()
+        #     plt.grid(True)
+        #     plt.tight_layout()
+        #     plt.savefig("cluster_consistency_plot.png")
 
 
         if not output_type == "latent":

@@ -88,7 +88,6 @@ def compute_distribution_gradients(
    
     logits = model(sample, timestep) / temperature
     logits = F.softmax(logits, dim=1)
-    print(f"Timestep {timestep} : Logits {logits}")
     loss = torch.mean(logits, dim = 0)
     
     # Assume two classes and 1:1 distribution
