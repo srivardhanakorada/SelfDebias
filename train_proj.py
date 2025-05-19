@@ -121,14 +121,16 @@ def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
             plot_umap(np.vstack(preds_t25), np.vstack(targets_t25), epoch)
 
         torch.save(model.state_dict(), f"/kaggle/working/checkpoints/epoch{epoch}.pt")
+        torch.save(optimizer.state_dict(), f"/kaggle/working/optimizer_state/epoch{epoch}.pt")
 
 # === CONFIGURATION ===
 os.makedirs("/kaggle/temp", exist_ok=True)
 os.makedirs("/kaggle/working/umap_plots", exist_ok=True)
 os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
+os.makedirs("/kaggle/working/optimizer_state", exist_ok=True)
 root_dir = "/kaggle/input/contrastive-loss-dataset/contrastive_triplets"
 dataset = ContrastiveTripletDataset(root_dir)
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=8)
+dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 
 model = HToCLIPJointContrast().cuda()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
