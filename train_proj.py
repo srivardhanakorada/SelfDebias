@@ -60,7 +60,7 @@ def nt_xent_loss(z_pred, z1, z2, temperature=0.1):
     pos_sim = F.cosine_similarity(z_pred, z1, dim=-1) + F.cosine_similarity(z_pred, z2, dim=-1)
     return -pos_sim.mean() / temperature
 
-def plot_umap(preds, targets, epoch, out_dir="/kaggle/temp/umap_plots"):
+def plot_umap(preds, targets, epoch, out_dir="/kaggle/working/umap_plots"):
     os.makedirs(out_dir, exist_ok=True)
     sample_size = min(500, len(preds))
     idxs = np.random.choice(len(preds), sample_size, replace=False)
@@ -120,15 +120,15 @@ def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
         if preds_t25:
             plot_umap(np.vstack(preds_t25), np.vstack(targets_t25), epoch)
 
-        torch.save(model.state_dict(), f"/kaggle/temp/checkpoints/epoch{epoch}.pt")
+        torch.save(model.state_dict(), f"/kaggle/working/checkpoints/epoch{epoch}.pt")
 
 # === CONFIGURATION ===
 os.makedirs("/kaggle/temp", exist_ok=True)
-os.makedirs("/kaggle/temp/umap_plots", exist_ok=True)
-os.makedirs("/kaggle/temp/checkpoints", exist_ok=True)
+os.makedirs("/kaggle/working/umap_plots", exist_ok=True)
+os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
 root_dir = "/kaggle/input/contrastive-loss-dataset/contrastive_triplets"
 dataset = ContrastiveTripletDataset(root_dir)
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
+dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=8)
 
 model = HToCLIPJointContrast().cuda()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
