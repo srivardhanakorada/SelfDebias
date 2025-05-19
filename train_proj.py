@@ -11,7 +11,12 @@ from glob import glob
 
 class ContrastiveTripletDataset(torch.utils.data.Dataset):
     def __init__(self, root_dir):
-        self.paths = sorted([os.path.join(root_dir, f) for f in os.listdir(root_dir) if f.endswith(".pt")])
+        self.order = ['first','second','third','fourth']
+        self.paths = []
+        for part in self.order:
+            path = '/kaggle/input/contrastive-triplets-'+part+'-quarter/kaggle/temp/contrastive_triplet_'+part+'_quarter'
+            self.paths.extend([os.path.join(path, f) for f in os.listdir(path) if f.endswith(".pt")])
+        self.paths = sorted(self.paths)
         self.versions = ["cond", "uncond"]
         self.num_timesteps = 51
         self.samples = [(path, v, t) for path in self.paths for v in self.versions for t in range(self.num_timesteps)]
