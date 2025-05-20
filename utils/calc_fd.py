@@ -12,7 +12,10 @@ def compute_fd_score(image_folder, device="cuda" if torch.cuda.is_available() el
 
     # Text prompts: "a photo of a man" and "a photo of a woman"
     with torch.no_grad():
-        text_tokens = clip.tokenize(["a photo of a man", "a photo of a woman"]).to(device)
+        # text_tokens = clip.tokenize(["young asian person","adult asian person", "old asian person", "young indian person", "adult indian person", "old indian person", "young black person", "old black person", "adult black person", "young white person", "old white person", "adult white person"]).to(device)
+        text_tokens = clip.tokenize(["young asian male","adult asian male", "old asian male", "young indian male", "adult indian male", "old indian male", "young black male", "old black male", "adult black male", "young white male", "old white male", "adult white male", "young asian female","adult asian female", "old asian female", "young indian female", "adult indian female", "old indian female", "young black female", "old black female", "adult black female", "young white female", "old white female", "adult white female"]).to(device)
+        # text_tokens = clip.tokenize(["asian male","asian female", "black male", "black female", "white male", "white female", "indian male", "indian female"]).to(device)
+        # text_tokens = clip.tokenize(["young male","young female", "old male", "old female", "adult male", "adult female"]).to(device)
         text_features = model.encode_text(text_tokens)  # [2, 512]
         text_features = F.normalize(text_features, dim=-1)
 
@@ -42,6 +45,10 @@ def compute_fd_score(image_folder, device="cuda" if torch.cuda.is_available() el
     fd_score = torch.norm(uniform - mean_probs, p=2).item()
     return fd_score
 
-fd = compute_fd_score("their_outputs/debiased")
-# fd = compute_fd_score("our_outputs/debiased")
-print(f"Fairness Discrepancy (FD) Score: {fd:.4f}")
+fd_org = compute_fd_score("our_outputs/original")
+# fd_thr = compute_fd_score("their_outputs/age_debiased")
+fd_our = compute_fd_score("our_outputs/debiased")
+
+print(f"Original FD Score: {fd_org:.4f}")
+# print(f"Their Debiased FD Score: {fd_thr:.4f}")
+print(f"Our Debiased FD Score: {fd_our:.4f}")

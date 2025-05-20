@@ -56,5 +56,5 @@ def compute_fid(folder1, folder2, device="cuda"):
     return fid_score
 
 # Example usage:
-fid = compute_fid("our_outputs/original", "their_outputs/debiased")
+fid = compute_fid("our_outputs/original", "their_outputs/age_debiased")
 print("FID:", fid)

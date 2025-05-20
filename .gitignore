@@ -9,3 +9,5 @@ our_outputs
 their_outputs
 checkpoints
 pretrained
+prompt_based
+centroids_recursive

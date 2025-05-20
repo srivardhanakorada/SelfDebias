@@ -37,41 +37,35 @@ def load_dual_centroids(timestep: int, centroid_path: str):
 
 @torch.enable_grad()
 def compute_distribution_gradients(
-    sample: torch.Tensor,  # [2B, 1280, 8, 8]
+    sample: torch.Tensor,           # shape: [2B, 1280, 8, 8]
     timestep: int,
     checkpoint_path: str,
     centroid_path: str,
     loss_strength: float,
     temperature: float = 8.0,
-) :
+):
     device = sample.device
     sample = sample.detach().requires_grad_()
-
     model = make_model(checkpoint_path, device)
     centroids_cond, centroids_uncond = load_dual_centroids(timestep, centroid_path)
-    centroids_cond = centroids_cond.to(device)
-    centroids_uncond = centroids_uncond.to(device)
-
-    cond_h = sample[1::2]
-    uncond_h = sample[0::2]
+    centroids_cond = centroids_cond.to(device)        # [C1, 512]
+    centroids_uncond = centroids_uncond.to(device)    # [C2, 512]
+    cond_h = sample[1::2]     # [B, ...]
+    uncond_h = sample[0::2]   # [B, ...]
     t_tensor = torch.full((cond_h.size(0),), timestep, dtype=torch.long, device=device)
-
-    z_cond = model(cond_h, t_tensor)
-    z_uncond = model(uncond_h, t_tensor)
-
-    sims_cond = F.cosine_similarity(z_cond.unsqueeze(1), centroids_cond.unsqueeze(0), dim=-1)
-    sims_uncond = F.cosine_similarity(z_uncond.unsqueeze(1), centroids_uncond.unsqueeze(0), dim=-1)
-    probs_cond = F.softmax(sims_cond / temperature, dim=-1)
-    probs_uncond = F.softmax(sims_uncond / temperature, dim=-1)
-
-    uniform = torch.full_like(probs_cond, 1.0 / probs_cond.size(1))
-    kl_cond = (probs_cond * (probs_cond / uniform).log()).sum(dim=1).mean()
-    kl_uncond = (probs_uncond * (probs_uncond / uniform).log()).sum(dim=1).mean()
+    z_cond = model(cond_h, t_tensor)      # [B, 512]
+    z_uncond = model(uncond_h, t_tensor)  # [B, 512]
+    sims_cond = F.cosine_similarity(z_cond.unsqueeze(1), centroids_cond.unsqueeze(0), dim=-1)      # [B, C1]
+    sims_uncond = F.cosine_similarity(z_uncond.unsqueeze(1), centroids_uncond.unsqueeze(0), dim=-1)  # [B, C2]
+    probs_cond = F.softmax(sims_cond / temperature, dim=-1)     # [B, C1]
+    probs_uncond = F.softmax(sims_uncond / temperature, dim=-1) # [B, C2]
+    uniform_cond = torch.full_like(probs_cond, 1.0 / probs_cond.size(1))
+    uniform_uncond = torch.full_like(probs_uncond, 1.0 / probs_uncond.size(1))
+    kl_cond = (probs_cond * (probs_cond / uniform_cond).log()).sum(dim=1).mean()
+    kl_uncond = (probs_uncond * (probs_uncond / uniform_uncond).log()).sum(dim=1).mean()
     loss = loss_strength * (kl_cond + kl_uncond)
-
     grads = torch.autograd.grad(loss, sample)[0]
     return grads, probs_cond.detach().cpu(), probs_uncond.detach().cpu()
-
 
 @torch.enable_grad()
 def compute_sample_gradients(
