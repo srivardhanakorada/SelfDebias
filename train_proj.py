@@ -10,7 +10,7 @@ from tqdm import tqdm
 from glob import glob
 
 class ContrastiveTripletDataset(torch.utils.data.Dataset):
-    def __init__(self, root_dir):
+    def __init__(self):
         self.order = ['first','second','third','fourth']
         self.paths = []
         for part in self.order:
@@ -81,7 +81,8 @@ def plot_umap(preds, targets, epoch, out_dir="/kaggle/working/umap_plots"):
     plt.savefig(os.path.join(out_dir, f"umap_epoch{epoch}.png"))
     plt.close()
 
-def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
+def train_contrastive(model, dataloader, optimizer,epochs=10):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
     model.train()
     for epoch in range(1, epochs + 1):
         total_loss = 0
@@ -129,10 +130,11 @@ os.makedirs("/kaggle/working/umap_plots", exist_ok=True)
 os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
 os.makedirs("/kaggle/working/optimizer_state", exist_ok=True)
 root_dir = "/kaggle/input/contrastive-loss-dataset/contrastive_triplets"
-dataset = ContrastiveTripletDataset(root_dir)
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=8, pin_memory=True)
+dataset = ContrastiveTripletDataset()
+dataloader = DataLoader(dataset, batch_size=64, shuffle=True,num_workers = 4)
 
-model = HToCLIPJointContrast().cuda()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+model = HToCLIPJointContrast().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda")
+train_contrastive(model, dataloader, optimizer,epochs=10)

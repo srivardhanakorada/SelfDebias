@@ -25,10 +25,12 @@ class HToCLIPJointContrast(nn.Module):
         return F.normalize(self.mlp(x), dim=-1)
 
 # --- Config ---
-data_dir = "data/contrastive_triplets"
-model_path = "pretrained/our.pt"
-save_path = "centroids/centroids.pt"
-device = "cuda:0"
+data_dir = "/kaggle/input/merged-contrastive-triplets/contrastive_triplets"
+model_path = "./pretrained/epoch10.pt"
+save_path = "/kaggle/temp/centroids/centroids.pt"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+os.makedirs("/kaggle/temp/centroids", exist_ok=True)
+# device = "cuda:0"
 num_timesteps = 51
 k = 2
 # --------------
