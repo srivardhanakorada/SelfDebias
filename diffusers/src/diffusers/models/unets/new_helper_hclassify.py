@@ -66,7 +66,7 @@ def compute_distribution_gradients(
     probs_cond = torch.mean(probs_cond, dim=0)
     probs_uncond = torch.mean(probs_uncond, dim=0)
     
-    uniform = torch.full_like(probs_cond, 1.0 / probs_cond.size(1))
+    uniform = torch.full_like(probs_cond, 1.0 / probs_cond.size(0))
     kl_cond = (probs_cond * (probs_cond / uniform).log()).sum(dim=1).mean()
     kl_uncond = (probs_uncond * (probs_uncond / uniform).log()).sum(dim=1).mean()
     loss = loss_strength * (kl_cond + kl_uncond)
