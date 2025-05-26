@@ -1116,7 +1116,7 @@ class UNet2DConditionModel(
         # on the fly if necessary.
         store = None
         probs_c, probs_u = None, None
-        centroid_path = "/kaggle/input/diffusion_pipeline/pytorch/default/24/clip_debiasing_gen_models/centroids/centroids.pt" #Update meeee
+        centroid_path = "/kaggle/input/diffusion_pipeline/pytorch/default/25/clip_debiasing_gen_models/centroids/centroids.pt" #Update meeee
         
         all_timesteps = [1, 21, 41, 61, 81, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 521, 541, 561, 581, 601, 621, 641, 661, 681, 701, 721, 741, 761, 781, 801, 821, 841, 861, 881, 901, 921, 941, 961, 981]
         current_step_index = all_timesteps.index(int(timestep.item()))
