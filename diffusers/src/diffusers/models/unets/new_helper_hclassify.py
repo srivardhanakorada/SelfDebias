@@ -63,7 +63,9 @@ def compute_distribution_gradients(
     sims_uncond = F.cosine_similarity(z_uncond.unsqueeze(1), centroids_uncond.unsqueeze(0), dim=-1)
     probs_cond = F.softmax(sims_cond / temperature, dim=-1)
     probs_uncond = F.softmax(sims_uncond / temperature, dim=-1)
-
+    probs_cond = torch.mean(probs_cond, dim=0)
+    probs_uncond = torch.mean(probs_uncond, dim=0)
+    
     uniform = torch.full_like(probs_cond, 1.0 / probs_cond.size(1))
     kl_cond = (probs_cond * (probs_cond / uniform).log()).sum(dim=1).mean()
     kl_uncond = (probs_uncond * (probs_uncond / uniform).log()).sum(dim=1).mean()

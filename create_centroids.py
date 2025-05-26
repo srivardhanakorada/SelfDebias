@@ -26,7 +26,7 @@ class HToCLIPJointContrast(nn.Module):
 
 # --- Config ---
 data_dir = "/kaggle/input/merged-contrastive-triplets/contrastive_triplets"
-model_path = "/kaggle/input/diffusion_pipeline/pytorch/default/21/clip_debiasing_gen_models/pretrained/epoch10.pt" #Update meeee
+model_path = "/kaggle/input/diffusion_pipeline/pytorch/default/22/clip_debiasing_gen_models/pretrained/epoch10.pt" #Update meeee
 save_path = "/kaggle/temp/centroids/centroids.pt"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
 os.makedirs("/kaggle/temp/centroids", exist_ok=True)
