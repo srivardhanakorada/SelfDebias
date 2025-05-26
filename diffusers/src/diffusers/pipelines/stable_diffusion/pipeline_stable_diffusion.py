@@ -1071,8 +1071,8 @@ class StableDiffusionPipeline(
                 noise_pred,h,grads,probs_c,probs_u = output
             h_vecs.append(h)
             grad_list.append(grads)
-            if probs_c is not None : all_probs_cond.append(probs_c.mean(dim=0).numpy())   # [2] (mean over batch)
-            if probs_u is not None : all_probs_uncond.append(probs_u.mean(dim=0).numpy())
+            if probs_c is not None : all_probs_cond.append(probs_c.numpy())   # [2] (mean over batch)
+            if probs_u is not None : all_probs_uncond.append(probs_u.numpy())
 
             # perform guidance
             if self.do_classifier_free_guidance:
@@ -1121,7 +1121,7 @@ class StableDiffusionPipeline(
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
-            plt.savefig("cluster_consistency_plot.png")
+            plt.savefig("/kaggle/working/cluster_consistency_plot.png")
 
 
         if not output_type == "latent":

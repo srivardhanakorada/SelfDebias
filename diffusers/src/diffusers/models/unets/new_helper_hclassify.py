@@ -61,12 +61,12 @@ def compute_distribution_gradients(
 
     sims_cond = F.cosine_similarity(z_cond.unsqueeze(1), centroids_cond.unsqueeze(0), dim=-1)
     sims_uncond = F.cosine_similarity(z_uncond.unsqueeze(1), centroids_uncond.unsqueeze(0), dim=-1)
-    probs_cond = F.softmax(sims_cond / temperature, dim=-1)
+    probs_cond = F.softmax(sims_cond / temperature, dim=-1) # (batch size, cluster_size)
     probs_uncond = F.softmax(sims_uncond / temperature, dim=-1)
     probs_cond = torch.mean(probs_cond, dim=0)
     probs_uncond = torch.mean(probs_uncond, dim=0)
     
-    uniform = torch.full_like(probs_cond, 1.0 / probs_cond.size(0))
+    uniform = torch.full_like(probs_cond, 1.0 / probs_cond.size(0)) #size 0 since we have taken mean
     # print(uniform)
     # print("new line")
     # print(probs_cond)
@@ -77,7 +77,8 @@ def compute_distribution_gradients(
     # print("new line 4")
     # print(probs_uncond.shape)
     # print("new line 5")
-    kl_cond = (probs_cond * (probs_cond / uniform).log()).sum(dim=0).mean()
+    kl_cond = (probs_cond * (probs_cond / uniform).log()).sum(dim=0).mean() #the total loss for a sample is the KLD applied for each discrete category and summed. The overall loss would be the average of that.
+    #taking dim=0 since we have a 1D array after mean
     kl_uncond = (probs_uncond * (probs_uncond / uniform).log()).sum(dim=0).mean()
     loss = loss_strength * (kl_cond + kl_uncond)
 
