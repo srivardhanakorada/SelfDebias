@@ -11,3 +11,10 @@ checkpoints
 pretrained
 prompt_based
 centroids_recursive
+building_data
+env_outputs
+pet_data
+pet_outputs
+comparison_grids_custom
+final_results
+umap_plots

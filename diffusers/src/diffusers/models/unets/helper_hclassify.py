@@ -71,6 +71,7 @@ def compute_sample_gradients(
     
     return gradients[0]
 
+## PARIHAR's
 
 @torch.enable_grad()
 def compute_distribution_gradients(

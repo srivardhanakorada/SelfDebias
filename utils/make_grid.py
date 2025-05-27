@@ -28,4 +28,4 @@ def make_image_grid(folder_path, output_path='grid_output.png', images_per_row=4
     grid_image.save(output_path)
     print(f"Saved image grid to: {output_path}")
 
-make_image_grid('prompt_based/neutral/debiased')
+make_image_grid('random_faces.png')

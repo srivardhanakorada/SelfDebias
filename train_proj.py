@@ -5,9 +5,8 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import umap
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from tqdm import tqdm
-from glob import glob
 
 class ContrastiveTripletDataset(torch.utils.data.Dataset):
     def __init__(self, root_dir):
@@ -119,7 +118,7 @@ def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
         torch.save(model.state_dict(), f"checkpoints/epoch{epoch}.pt")
 
 # === CONFIGURATION ===
-root_dir = "data/contrastive_triplets"
+root_dir = "pet_data/contrastive_triplets"
 dataset = ContrastiveTripletDataset(root_dir)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 

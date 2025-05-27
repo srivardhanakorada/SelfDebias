@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from collections import defaultdict
 
 # --- Config ---
-data_dir = "data/contrastive_triplets"
-model_path = "pretrained/our.pt"
-save_path = "centroids_recursive/centroids.pt"
+data_dir = "pet_data/contrastive_triplets"
+model_path = "pretrained/our_pet.pt"
+save_path = "centroids_recursive/centroids_pet.pt"
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
 device = "cuda:0"
 num_timesteps = 51

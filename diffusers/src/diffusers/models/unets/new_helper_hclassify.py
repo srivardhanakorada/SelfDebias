@@ -46,26 +46,49 @@ def compute_distribution_gradients(
 ):
     device = sample.device
     sample = sample.detach().requires_grad_()
+
     model = make_model(checkpoint_path, device)
+
+    # Load centroids for conditional and unconditional samples
     centroids_cond, centroids_uncond = load_dual_centroids(timestep, centroid_path)
     centroids_cond = centroids_cond.to(device)        # [C1, 512]
     centroids_uncond = centroids_uncond.to(device)    # [C2, 512]
+
+    # Split the batch into conditional and unconditional parts
     cond_h = sample[1::2]     # [B, ...]
     uncond_h = sample[0::2]   # [B, ...]
+
     t_tensor = torch.full((cond_h.size(0),), timestep, dtype=torch.long, device=device)
+
+    # Project to semantic space
     z_cond = model(cond_h, t_tensor)      # [B, 512]
     z_uncond = model(uncond_h, t_tensor)  # [B, 512]
+
+    # Compute cosine similarities to centroids
     sims_cond = F.cosine_similarity(z_cond.unsqueeze(1), centroids_cond.unsqueeze(0), dim=-1)      # [B, C1]
     sims_uncond = F.cosine_similarity(z_uncond.unsqueeze(1), centroids_uncond.unsqueeze(0), dim=-1)  # [B, C2]
+
+    # Softmax to get probability distributions
     probs_cond = F.softmax(sims_cond / temperature, dim=-1)     # [B, C1]
     probs_uncond = F.softmax(sims_uncond / temperature, dim=-1) # [B, C2]
-    uniform_cond = torch.full_like(probs_cond, 1.0 / probs_cond.size(1))
-    uniform_uncond = torch.full_like(probs_uncond, 1.0 / probs_uncond.size(1))
-    kl_cond = (probs_cond * (probs_cond / uniform_cond).log()).sum(dim=1).mean()
-    kl_uncond = (probs_uncond * (probs_uncond / uniform_uncond).log()).sum(dim=1).mean()
+
+    # Compute empirical class distributions (batch-level)
+    p_empirical_cond = probs_cond.mean(dim=0)  # [C1]
+    p_empirical_uncond = probs_uncond.mean(dim=0)  # [C2]
+
+    # Define uniform target distributions
+    uniform_cond = torch.full_like(p_empirical_cond, 1.0 / p_empirical_cond.size(0))
+    uniform_uncond = torch.full_like(p_empirical_uncond, 1.0 / p_empirical_uncond.size(0))
+
+    # Compute KL divergence between batch distributions and uniform
+    kl_cond = (p_empirical_cond * (p_empirical_cond / uniform_cond).log()).sum()
+    kl_uncond = (p_empirical_uncond * (p_empirical_uncond / uniform_uncond).log()).sum()
+
+    # Total loss and gradients
     loss = loss_strength * (kl_cond + kl_uncond)
     grads = torch.autograd.grad(loss, sample)[0]
-    return grads, probs_cond.detach().cpu(), probs_uncond.detach().cpu()
+
+    return grads, p_empirical_cond.detach().cpu(), kl_cond.detach().cpu(), loss.detach().cpu()
 
 @torch.enable_grad()
 def compute_sample_gradients(
