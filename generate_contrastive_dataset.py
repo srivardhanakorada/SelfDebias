@@ -18,9 +18,9 @@ preprocess_aug = T.Compose([
 ])
 
 # Paths
-H_DIR = "pet_data/h"
-IMG_DIR = "pet_data/images"
-OUT_DIR = "pet_data/contrastive_triplets"
+H_DIR = "vhl_data/h"
+IMG_DIR = "vhl_data/images"
+OUT_DIR = "vhl_data/contrastive_triplets"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 num_timesteps = 51

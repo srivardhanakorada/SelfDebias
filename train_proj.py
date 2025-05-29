@@ -118,7 +118,7 @@ def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
         torch.save(model.state_dict(), f"checkpoints/epoch{epoch}.pt")
 
 # === CONFIGURATION ===
-root_dir = "pet_data/contrastive_triplets"
+root_dir = "vhl_data/contrastive_triplets"
 dataset = ContrastiveTripletDataset(root_dir)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 

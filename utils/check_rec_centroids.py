@@ -9,9 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # --- CONFIG ---
-centroids_path = "centroids_recursive/centroids_pet.pt"
-model_path = "pretrained/our_pet.pt"
-triplet_dir = "pet_data/contrastive_triplets"
+centroids_path = "centroids_recursive/centroids_vhl.pt"
+model_path = "pretrained/our_vhl.pt"
+triplet_dir = "vhl_data/contrastive_triplets"
 timesteps = [1, 5, 10, 25, 50]
 version = "cond"
 device = "cuda:0"

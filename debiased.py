@@ -13,10 +13,10 @@ seed = 42
 device = 'cuda'
 NUM_IMAGES = 100 
 BATCH_SIZE = 4
-CHECKPOINT = "pretrained/our_pet.pt"
-PROMPT = "Photo of a pet"
-NEG_PROMPT = "multiple, cartoonish, sketch, drawing, blurred, distorted"
-OUT_DIR = "pet_outputs/debiased_rec"
+CHECKPOINT = "pretrained/our_vhl.pt"
+PROMPT = "Realistic photo of a single [vehicle], full body visible, neutral background"
+NEG_PROMPT = "multiple objects, partial view, cropped, human, animal, painting, cartoon, abstract, distorted, unrealistic rendering"
+OUT_DIR = "vhl_outputs/debiased_rec"
 # ---------------
 
 pipeline = DiffusionPipeline.from_pretrained(
@@ -37,4 +37,3 @@ for i in tqdm(range(0, NUM_IMAGES, BATCH_SIZE),desc="Debiased Generating"):
         mode="distribution",
     )
     save_batch(result.images, OUT_DIR, start_idx=i, prefix="debiased")
-    with open("debiased.txt", "a") as f: f.write(f"Saved batch starting at {i}\n")
