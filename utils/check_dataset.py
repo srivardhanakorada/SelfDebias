@@ -1,35 +1,3 @@
-# import os
-# import torch
-# import umap
-# import numpy as np
-# import matplotlib.pyplot as plt
-
-# # --- CONFIG ---
-# folder_path = "data/clip"  # Replace with your actual folder
-
-# # --- LOAD VECTORS FROM .pt FILES ---
-# clip_vectors = []
-
-# file_list = sorted([f for f in os.listdir(folder_path) if f.endswith(".pt")])
-# for filename in file_list:
-#     vec = torch.load(os.path.join(folder_path, filename))
-#     vec = vec.detach().cpu().numpy()
-#     vec = vec.reshape(-1)  # Ensure 1D vector
-#     clip_vectors.append(vec)
-
-# clip_vectors = np.stack(clip_vectors)
-
-# # --- UMAP DIMENSIONALITY REDUCTION ---
-# reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
-# embedding = reducer.fit_transform(clip_vectors)
-
-# # --- PLOT ---
-# plt.figure(figsize=(10, 7))
-# plt.scatter(embedding[:, 0], embedding[:, 1], s=20)
-# plt.title("UMAP Projection of CLIP Vectors (.pt files)")
-# plt.xlabel("UMAP 1")
-# plt.ylabel("UMAP 2")
-# plt.savefig("clip_vecs.png")
 import os
 import torch
 import umap

@@ -1,3 +1,0 @@
-nohup: ignoring input
-Loading pipeline components...:   0%|          | 0/7 [00:00<?, ?it/s]Loading pipeline components...:  14%|█▍        | 1/7 [00:00<00:00,  9.82it/s]Loading pipeline components...:  29%|██▊       | 2/7 [00:00<00:00,  9.24it/s]Loading pipeline components...:  43%|████▎     | 3/7 [00:00<00:00,  5.00it/s]Loading pipeline components...:  86%|████████▌ | 6/7 [00:00<00:00,  7.03it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:01<00:00,  6.54it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:01<00:00,  6.68it/s]
-Potential NSFW content was detected in one or more images. A black image will be returned instead. Try again with a different prompt and/or seed.
