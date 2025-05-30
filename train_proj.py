@@ -11,12 +11,7 @@ from glob import glob
 
 class ContrastiveTripletDataset(torch.utils.data.Dataset):
     def __init__(self):
-        self.order = ['first','second','third','fourth']
-        self.paths = []
-        for part in self.order:
-            path = '/kaggle/input/contrastive-triplets-'+part+'-quarter/kaggle/temp/contrastive_triplet_'+part+'_quarter'
-            self.paths.extend([os.path.join(path, f) for f in os.listdir(path) if f.endswith(".pt")])
-        self.paths = sorted(self.paths)
+        self.paths = sorted(glob(os.path.join("/kaggle/input/merged-contrastive-triplets/contrastive_triplets/", "*.pt")))
         self.versions = ["cond", "uncond"]
         self.num_timesteps = 51
         self.samples = [(path, v, t) for path in self.paths for v in self.versions for t in range(self.num_timesteps)]
@@ -53,12 +48,27 @@ class HToCLIPJointContrast(nn.Module):
         x = torch.cat([h, t_emb], dim=-1)
         return F.normalize(self.mlp(x), dim=-1)
 
-def nt_xent_loss(z_pred, z1, z2, temperature=0.1):
+def nt_xent_loss(z_pred, z1, temperature=0.1):
+    batch_size = z_pred.size(0)
     z_pred = F.normalize(z_pred, dim=-1)
     z1 = F.normalize(z1, dim=-1)
-    z2 = F.normalize(z2, dim=-1)
-    pos_sim = F.cosine_similarity(z_pred, z1, dim=-1) + F.cosine_similarity(z_pred, z2, dim=-1)
-    return -pos_sim.mean() / temperature
+    z = torch.cat([z_pred, z1], dim=0)
+    sim = torch.mm(z, z.t()) / temperature
+    mask = torch.eye(2*batch_size, dtype=torch.bool, device=z.device)
+    sim = sim.masked_fill(mask, -float('inf'))
+    pos_mask = torch.zeros_like(mask)
+    pos_mask[torch.arange(batch_size), torch.arange(batch_size)+batch_size] = 1
+    pos_mask[torch.arange(batch_size)+batch_size, torch.arange(batch_size)] = 1
+    
+    logits = sim - torch.logsumexp(sim, dim=1, keepdim=True)
+    
+    # Extract positive pairs and average
+    loss = - (logits * pos_mask).sum() / (2 * batch_size)
+    
+    return loss
+    # z2 = F.normalize(z2, dim=-1)
+    # pos_sim = F.cosine_similarity(z_pred, z1, dim=-1) + F.cosine_similarity(z_pred, z2, dim=-1)
+    # return -pos_sim.mean() / temperature
 
 def plot_umap(preds, targets, epoch, out_dir="/kaggle/working/umap_plots"):
     os.makedirs(out_dir, exist_ok=True)
@@ -86,6 +96,8 @@ def train_contrastive(model, dataloader, optimizer,epochs=10):
     model.train()
     for epoch in range(1, epochs + 1):
         total_loss = 0
+        total_loss_1 = 0
+        total_loss_2 = 0
         all_cosines = []
         preds_t25, targets_t25 = [], []
 
@@ -98,7 +110,11 @@ def train_contrastive(model, dataloader, optimizer,epochs=10):
 
             optimizer.zero_grad()
             z_pred = model(h, t)
-            loss = nt_xent_loss(z_pred, clip1, clip2)
+            loss_1 = nt_xent_loss(z_pred, clip1)
+            loss_2 = nt_xent_loss(z_pred, clip2)
+            loss = (loss_1 + loss_2)/2
+            total_loss_1 += loss_1.item()
+            total_loss_2 += loss_2.item()
             loss.backward()
             optimizer.step()
 
@@ -115,8 +131,10 @@ def train_contrastive(model, dataloader, optimizer,epochs=10):
                     targets_t25.append(clip_base[mask].cpu().numpy())
 
         avg_loss = total_loss / len(dataloader)
+        avg_loss_1 = total_loss_1 / len(dataloader)
+        avg_loss_2 = total_loss_2 / len(dataloader)
         avg_cosine = np.mean(all_cosines)
-        print(f"Epoch {epoch} - Loss: {avg_loss:.8f} | Cosine Sim: {avg_cosine:.8f}")
+        print(f"Epoch {epoch} - Total Loss: {avg_loss:.8f} | Avg loss 1: {avg_loss_1:.8f} | Avg loss 2: {avg_loss_2:.8f} | Cosine Sim: {avg_cosine:.8f}")
 
         if preds_t25:
             plot_umap(np.vstack(preds_t25), np.vstack(targets_t25), epoch)
