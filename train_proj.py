@@ -48,27 +48,51 @@ class HToCLIPJointContrast(nn.Module):
         x = torch.cat([h, t_emb], dim=-1)
         return F.normalize(self.mlp(x), dim=-1)
 
+# def nt_xent_loss(z_pred, z1, temperature=0.1):
+#     batch_size = z_pred.size(0)
+#     z_pred = F.normalize(z_pred, dim=-1)
+#     z1 = F.normalize(z1, dim=-1)
+#     z = torch.cat([z_pred, z1], dim=0)
+#     sim = torch.mm(z, z.t()) / temperature
+#     mask = torch.eye(2*batch_size, dtype=torch.bool, device=z.device)
+#     sim = sim.masked_fill(mask, -float('inf'))
+#     pos_mask = torch.zeros_like(mask)
+#     pos_mask[torch.arange(batch_size), torch.arange(batch_size)+batch_size] = 1
+#     pos_mask[torch.arange(batch_size)+batch_size, torch.arange(batch_size)] = 1
+    
+#     logits = sim - torch.logsumexp(sim, dim=1, keepdim=True)
+    
+#     # Extract positive pairs and average
+#     loss = - (logits * pos_mask).sum() / (2 * batch_size)
+    
+#     return loss
+    # z2 = F.normalize(z2, dim=-1)
+    # pos_sim = F.cosine_similarity(z_pred, z1, dim=-1) + F.cosine_similarity(z_pred, z2, dim=-1)
+    # return -pos_sim.mean() / temperature
+    
 def nt_xent_loss(z_pred, z1, temperature=0.1):
     batch_size = z_pred.size(0)
     z_pred = F.normalize(z_pred, dim=-1)
     z1 = F.normalize(z1, dim=-1)
     z = torch.cat([z_pred, z1], dim=0)
     sim = torch.mm(z, z.t()) / temperature
-    mask = torch.eye(2*batch_size, dtype=torch.bool, device=z.device)
-    sim = sim.masked_fill(mask, -float('inf'))
+    mask = torch.eye(2*batch_size, dtype=torch.bool, device=z.device)    
+    sim = sim.masked_fill(mask,0)
+    logits = sim - torch.logsumexp(sim,dim=1,keepdim=True)
     pos_mask = torch.zeros_like(mask)
     pos_mask[torch.arange(batch_size), torch.arange(batch_size)+batch_size] = 1
     pos_mask[torch.arange(batch_size)+batch_size, torch.arange(batch_size)] = 1
     
-    logits = sim - torch.logsumexp(sim, dim=1, keepdim=True)
-    
-    # Extract positive pairs and average
-    loss = - (logits * pos_mask).sum() / (2 * batch_size)
+    # # Extract positive pairs and average
+    loss = - (logits * pos_mask).sum() / (2 * batch_size) #and here, nan due to -inf * 0
     
     return loss
-    # z2 = F.normalize(z2, dim=-1)
-    # pos_sim = F.cosine_similarity(z_pred, z1, dim=-1) + F.cosine_similarity(z_pred, z2, dim=-1)
-    # return -pos_sim.mean() / temperature
+
+# what is going wrong:
+
+# 1. Nan issue due to -infinity being incorrectly handled.
+
+# should we only take zpred with zactual or even include the predictions to be far apart??
 
 def plot_umap(preds, targets, epoch, out_dir="/kaggle/working/umap_plots"):
     os.makedirs(out_dir, exist_ok=True)
@@ -111,7 +135,7 @@ def train_contrastive(model, dataloader, optimizer,epochs=10):
             optimizer.zero_grad()
             z_pred = model(h, t)
             loss_1 = nt_xent_loss(z_pred, clip1)
-            loss_2 = nt_xent_loss(z_pred, clip2)
+            loss_2 = nt_xent_loss(z_pred, clip2) #not chossing to have clip_base term since we are using that for validation.
             loss = (loss_1 + loss_2)/2
             total_loss_1 += loss_1.item()
             total_loss_2 += loss_2.item()
@@ -149,7 +173,7 @@ os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
 os.makedirs("/kaggle/working/optimizer_state", exist_ok=True)
 root_dir = "/kaggle/input/contrastive-loss-dataset/contrastive_triplets"
 dataset = ContrastiveTripletDataset()
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True,num_workers = 8)
+dataloader = DataLoader(dataset, batch_size=512, shuffle=True,num_workers = 8)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
 model = HToCLIPJointContrast().to(device)
