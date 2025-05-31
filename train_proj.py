@@ -77,8 +77,9 @@ def nt_xent_loss(z_pred, z1, temperature=0.1):
     z = torch.cat([z_pred, z1], dim=0)
     sim = torch.mm(z, z.t()) / temperature
     mask = torch.eye(2*batch_size, dtype=torch.bool, device=z.device)    
-    sim = sim.masked_fill(mask,0)
+    sim = sim.masked_fill(mask,-float('inf'))
     logits = sim - torch.logsumexp(sim,dim=1,keepdim=True)
+    logits = logits.masked_fill(mask,0)
     pos_mask = torch.zeros_like(mask)
     pos_mask[torch.arange(batch_size), torch.arange(batch_size)+batch_size] = 1
     pos_mask[torch.arange(batch_size)+batch_size, torch.arange(batch_size)] = 1
