@@ -174,7 +174,7 @@ os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
 os.makedirs("/kaggle/working/optimizer_state", exist_ok=True)
 root_dir = "/kaggle/input/contrastive-loss-dataset/contrastive_triplets"
 dataset = ContrastiveTripletDataset()
-dataloader = DataLoader(dataset, batch_size=512, shuffle=True,num_workers = 8)
+dataloader = DataLoader(dataset, batch_size=512, shuffle=True,num_workers = 4)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
 model = HToCLIPJointContrast().to(device)
