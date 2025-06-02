@@ -168,16 +168,17 @@ def train_contrastive(model, dataloader, optimizer,epochs=10):
         torch.save(optimizer.state_dict(), f"/kaggle/working/optimizer_state/epoch{epoch}.pt")
 
 # === CONFIGURATION ===
-os.makedirs("/kaggle/temp", exist_ok=True)
-os.makedirs("/kaggle/working/umap_plots", exist_ok=True)
-os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
-os.makedirs("/kaggle/working/optimizer_state", exist_ok=True)
-root_dir = "/kaggle/input/contrastive-loss-dataset/contrastive_triplets"
-dataset = ContrastiveTripletDataset()
-dataloader = DataLoader(dataset, batch_size=512, shuffle=True,num_workers = 4)
+if __name__ == '__main__':
+    os.makedirs("/kaggle/temp", exist_ok=True)
+    os.makedirs("/kaggle/working/umap_plots", exist_ok=True)
+    os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
+    os.makedirs("/kaggle/working/optimizer_state", exist_ok=True)
+    root_dir = "/kaggle/input/contrastive-loss-dataset/contrastive_triplets"
+    dataset = ContrastiveTripletDataset()
+    dataloader = DataLoader(dataset, batch_size=512, shuffle=True,num_workers = 4)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
-model = HToCLIPJointContrast().to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+    model = HToCLIPJointContrast().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-train_contrastive(model, dataloader, optimizer,epochs=10)
+    train_contrastive(model, dataloader, optimizer,epochs=10)
