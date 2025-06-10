@@ -115,10 +115,10 @@ def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
             plot_umap(np.vstack(preds_t25), np.vstack(targets_t25), epoch)
 
         os.makedirs("checkpoints", exist_ok=True)
-        torch.save(model.state_dict(), f"checkpoints/epoch{epoch}.pt")
+        torch.save(model.state_dict(), f"checkpoints/face.pt")
 
 # === CONFIGURATION ===
-root_dir = "pet_data/contrastive_triplets"
+root_dir = "face_data/contrastive_triplets"
 dataset = ContrastiveTripletDataset(root_dir)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 
