@@ -1,0 +1,5 @@
+nohup: ignoring input
+Loading pipeline components...:   0%|          | 0/7 [00:00<?, ?it/s]Loading pipeline components...:  29%|██▊       | 2/7 [00:00<00:00,  7.33it/s]Loading pipeline components...:  57%|█████▋    | 4/7 [00:00<00:00,  6.96it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:00<00:00,  8.25it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:00<00:00,  7.95it/s]
+Debiased Generating:   0%|          | 0/4 [00:00<?, ?it/s]Potential NSFW content was detected in one or more images. A black image will be returned instead. Try again with a different prompt and/or seed.
+Debiased Generating:  25%|██▌       | 1/4 [02:00<06:00, 120.18s/it]Debiased Generating:  50%|█████     | 2/4 [04:02<04:02, 121.35s/it]Potential NSFW content was detected in one or more images. A black image will be returned instead. Try again with a different prompt and/or seed.
+Debiased Generating:  75%|███████▌  | 3/4 [06:04<02:01, 121.60s/it]Debiased Generating: 100%|██████████| 4/4 [08:06<00:00, 121.83s/it]Debiased Generating: 100%|██████████| 4/4 [08:06<00:00, 121.61s/it]

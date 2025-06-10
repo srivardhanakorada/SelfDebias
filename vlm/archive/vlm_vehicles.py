@@ -1,5 +1,4 @@
 import os
-import re
 import torch
 from PIL import Image
 from transformers import (

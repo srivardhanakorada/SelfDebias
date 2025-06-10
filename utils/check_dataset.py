@@ -10,9 +10,9 @@ import matplotlib.image as mpimg
 from matplotlib import cm
 
 # --- CONFIG ---
-folder_path = "ball_data/clip"         # Path to CLIP vector .pt files
-images_folder = "ball_data/images"     # Path to image .png files
-num_clusters = 5                       # Number of spectral clusters
+folder_path = "train_data/clip"         # Path to CLIP vector .pt files
+images_folder = "train_data/images"     # Path to image .png files
+num_clusters = 8                       # Number of spectral clusters
 max_per_cluster = 4                    # Images to display per cluster
 
 # --- LOAD VECTORS FROM .pt FILES ---
@@ -52,6 +52,20 @@ plt.tight_layout()
 plt.savefig("clip_vecs_clustered.png")
 plt.close()
 
+descriptions = [
+    "Open grassy landscapes with scattered trees and soft lighting",                     # Cluster 0
+    "Dry, rocky, and arid landscapes with sparse vegetation and desert features",        # Cluster 1
+    "Forest trails through dense bamboo and woodland corridors",                         # Cluster 2
+    "Mountainous coastal landscapes with cliffs and large bodies of water",              # Cluster 3
+    "Mountain valleys with open grassy slopes and distant peaks",                        # Cluster 4
+    "Roads cutting through varied green forests and hilly terrain",                      # Cluster 5
+    "Lush riverbanks and mossy forest streams with flowing water",                       # Cluster 6
+    "High-altitude alpine valleys with snow-capped peaks and lakes"                      # Cluster 7
+]
+
+
+
+
 # --- MAP FILES TO CLUSTERS ---
 cluster_to_files = defaultdict(list)
 for i, label in enumerate(cluster_labels):
@@ -89,3 +103,144 @@ plt.tight_layout()
 plt.savefig("clustered_images_grid.png")
 plt.close()
 
+import clip
+from PIL import Image
+import torch.nn.functional as F
+
+# --- Load CLIP model ---
+device = "cuda" if torch.cuda.is_available() else "cpu"
+clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
+clip_model.eval()
+
+# --- Encode text descriptions ---
+with torch.no_grad():
+    text_tokens = clip.tokenize(descriptions).to(device)
+    text_features = clip_model.encode_text(text_tokens).float()  # ← force float32
+    text_features = F.normalize(text_features, dim=-1)
+
+# --- Compute cluster-wise mean vector ---
+cluster_means = []
+for cluster_id in range(num_clusters):
+    indices = [i for i, label in enumerate(cluster_labels) if label == cluster_id]
+    vectors = torch.tensor(clip_vectors[indices], dtype=torch.float32).to(device)
+    mean_vec = F.normalize(vectors.mean(dim=0, keepdim=True), dim=-1)
+    cluster_means.append(mean_vec)
+
+# --- Compare cluster means to text embeddings ---
+confusion_matrix = torch.zeros(num_clusters, len(descriptions))
+
+for i, mean_vec in enumerate(cluster_means):
+    sim = mean_vec @ text_features.T  # both now float32
+    confusion_matrix[i] = sim.squeeze()
+
+# --- Display results ---
+print("\nConfusion Matrix (cosine similarity between clusters and descriptions):\n")
+for i in range(num_clusters):
+    print(f"Cluster {i}:")
+    for j in range(len(descriptions)):
+        print(f"  vs \"{descriptions[j]}\": {confusion_matrix[i, j]:.3f}")
+    print()
+
+
+
+# import os
+# import torch
+# import umap
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from sklearn.neighbors import kneighbors_graph
+# from sklearn.cluster import SpectralClustering
+# from scipy.sparse.csgraph import laplacian
+# from scipy.linalg import eigvalsh
+# from collections import defaultdict
+# import random
+# import matplotlib.image as mpimg
+# from matplotlib import cm
+
+# # --- CONFIG ---
+# folder_path = "train_data/clip"
+# images_folder = "train_data/images"
+# max_per_cluster = 4
+
+# # --- LOAD VECTORS FROM .pt FILES ---
+# clip_vectors = []
+# file_list = sorted([f for f in os.listdir(folder_path) if f.endswith(".pt")])
+
+# for filename in file_list:
+#     vec = torch.load(os.path.join(folder_path, filename))
+#     vec = vec.detach().cpu().numpy().reshape(-1)
+#     clip_vectors.append(vec)
+
+# clip_vectors = np.stack(clip_vectors)
+
+# # --- ESTIMATE BEST k USING EIGENGAP HEURISTIC ---
+# adj_matrix = kneighbors_graph(clip_vectors, n_neighbors=10, include_self=False)
+# lap = laplacian(adj_matrix, normed=True)
+# eigenvalues = eigvalsh(lap.toarray())
+
+# # Compute eigengaps
+# eigengaps = np.diff(eigenvalues[:30])  # Check first 30 eigenvalues
+# best_k = np.argmax(eigengaps) + 1  # Index of largest eigengap + 1
+
+# print(f"Best number of clusters (estimated): k = {best_k}")
+
+# # --- UMAP DIMENSIONALITY REDUCTION ---
+# reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
+# embedding = reducer.fit_transform(clip_vectors)
+
+# # --- SPECTRAL CLUSTERING ---
+# spectral = SpectralClustering(n_clusters=best_k, affinity='nearest_neighbors', assign_labels='kmeans', random_state=42)
+# cluster_labels = spectral.fit_predict(clip_vectors)
+
+# # --- PLOT UMAP WITH CLUSTER LEGEND ---
+# plt.figure(figsize=(10, 7))
+# scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=cluster_labels, cmap='tab10', s=20)
+
+# colormap = cm.get_cmap('tab10', best_k)
+# handles = [plt.Line2D([0], [0], marker='o', color='w',
+#                       markerfacecolor=colormap(i), markersize=10, label=f"Cluster {i}")
+#            for i in range(best_k)]
+# plt.legend(handles=handles, title="Clusters")
+
+# plt.title(f"UMAP + Spectral Clustering (k={best_k})")
+# plt.xlabel("UMAP 1")
+# plt.ylabel("UMAP 2")
+# plt.tight_layout()
+# plt.savefig("clip_vecs_clustered.png")
+# plt.close()
+
+# # --- MAP FILES TO CLUSTERS ---
+# cluster_to_files = defaultdict(list)
+# for i, label in enumerate(cluster_labels):
+#     cluster_to_files[label].append(file_list[i])
+
+# # --- DISPLAY IMAGES IN GRID BY CLUSTER ---
+# plt.figure(figsize=(max_per_cluster * 3, best_k * 3))
+# colormap = cm.get_cmap('tab10', best_k)
+
+# for row, cluster_id in enumerate(sorted(cluster_to_files)):
+#     files = cluster_to_files[cluster_id]
+#     samples = random.sample(files, min(max_per_cluster, len(files)))
+#     for col, fname in enumerate(samples):
+#         img_name = os.path.splitext(fname)[0] + ".png"
+#         img_path = os.path.join(images_folder, img_name)
+#         if os.path.exists(img_path):
+#             img = mpimg.imread(img_path)
+#             index = row * max_per_cluster + col + 1
+#             ax = plt.subplot(best_k, max_per_cluster, index)
+#             ax.imshow(img)
+#             ax.axis('off')
+
+#             if col == 0:
+#                 ax.text(-0.1, 0.5, f"Cluster {cluster_id}",
+#                         fontsize=14, weight='bold',
+#                         color=colormap(cluster_id),
+#                         rotation=90,
+#                         va='center', ha='center',
+#                         transform=ax.transAxes)
+#         else:
+#             print(f"Image not found: {img_path}")
+
+# plt.tight_layout()
+# plt.savefig("clustered_images_grid.png")
+# plt.close()

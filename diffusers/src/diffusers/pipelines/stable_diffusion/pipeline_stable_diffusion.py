@@ -897,7 +897,6 @@ class StableDiffusionPipeline(
                 second element is a list of `bool`s indicating whether the corresponding generated image contains
                 "not-safe-for-work" (nsfw) content.
         """
-
         callback = kwargs.pop("callback", None)
         callback_steps = kwargs.pop("callback_steps", None)
 

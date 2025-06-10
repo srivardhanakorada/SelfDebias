@@ -9,13 +9,13 @@ def save_batch(images, folder, start_idx, prefix):
         img.save(os.path.join(folder, f"{prefix}_{start_idx + i:05d}.png"))
 
 # --- CONFIG ---
-seed = 6325
+seed = 42
 device = 'cuda'
-NUM_IMAGES = 8
-BATCH_SIZE = 4
-PROMPT = "Photo of a pet"
+NUM_IMAGES = 100
+BATCH_SIZE = 32
+PROMPT = "A photo of a train"
 NEG_PROMPT = "multiple, cartoonish, sketch, drawing, blurred, distorted"
-OUT_DIR = "pet_outputs/pet"
+OUT_DIR = "train_outputs/original"
 # ---------------
 
 pipeline = DiffusionPipeline.from_pretrained(

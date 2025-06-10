@@ -27,102 +27,55 @@ def make_model(path: Union[str, os.PathLike], device: torch.device) -> HToCLIPJo
     model.eval()
     return model
 
-def load_dual_centroids(timestep: int, centroid_path: str):
-    if not os.path.exists(centroid_path):
-        raise FileNotFoundError(f"Centroid file not found: {centroid_path}")
-    full_dict = torch.load(centroid_path)  # {"cond": {t: [K,512]}, "uncond": {t: [K,512]}}
-    cond = F.normalize(full_dict["cond"][timestep], dim=-1)
-    uncond = F.normalize(full_dict["uncond"][timestep], dim=-1)
-    return cond, uncond
+def load_attribute_reps(timestep: int, path: str):
+    full_dict = torch.load(path)
+    cond_dict = full_dict["cond"][timestep]
+    uncond_dict = full_dict["uncond"][timestep]
+    return cond_dict, uncond_dict
 
 @torch.enable_grad()
 def compute_distribution_gradients(
-    sample: torch.Tensor,           # shape: [2B, 1280, 8, 8]
+    sample: torch.Tensor,               # shape: [2B, 1280, 8, 8]
     timestep: int,
     checkpoint_path: str,
-    centroid_path: str,
+    attr_rep_path: str,
     loss_strength: float,
-    temperature: float = 8.0,
+    temperature: float = 8.0
 ):
     device = sample.device
     sample = sample.detach().requires_grad_()
-
     model = make_model(checkpoint_path, device)
 
-    # Load centroids for conditional and unconditional samples
-    centroids_cond, centroids_uncond = load_dual_centroids(timestep, centroid_path)
-    centroids_cond = centroids_cond.to(device)        # [C1, 512]
-    centroids_uncond = centroids_uncond.to(device)    # [C2, 512]
+    # Load representations
+    attr_reps_cond, attr_reps_uncond = load_attribute_reps(timestep, attr_rep_path)
 
-    # Split the batch into conditional and unconditional parts
+    # Prepare conditional and unconditional halves
     cond_h = sample[1::2]     # [B, ...]
     uncond_h = sample[0::2]   # [B, ...]
-
     t_tensor = torch.full((cond_h.size(0),), timestep, dtype=torch.long, device=device)
 
     # Project to semantic space
     z_cond = model(cond_h, t_tensor)      # [B, 512]
     z_uncond = model(uncond_h, t_tensor)  # [B, 512]
 
-    # Compute cosine similarities to centroids
-    sims_cond = F.cosine_similarity(z_cond.unsqueeze(1), centroids_cond.unsqueeze(0), dim=-1)      # [B, C1]
-    sims_uncond = F.cosine_similarity(z_uncond.unsqueeze(1), centroids_uncond.unsqueeze(0), dim=-1)  # [B, C2]
+    def compute_kl(z, attr_reps):
+        kl_total = 0.0
+        ans = [1,0,0]
+        for i, (attr_key, val_dict) in enumerate(attr_reps.items()):
+            values = list(val_dict.keys())
+            vectors = torch.stack([val_dict[val].to(device) for val in values], dim=0)  # [C, 512]
+            vectors = F.normalize(vectors, dim=-1)
+            sims = F.cosine_similarity(z.unsqueeze(1), vectors.unsqueeze(0), dim=-1)  # [B, C]
+            probs = F.softmax(sims / temperature, dim=-1)                             # [B, C]
+            p_empirical = probs.mean(dim=0)                                           # [C]
+            p_target = torch.full_like(p_empirical, 1.0 / p_empirical.size(0))        # uniform
+            kl = ans[i]*((p_empirical * (p_empirical / p_target).log()).sum())
+            kl_total += kl
+        return kl_total
 
-    # Softmax to get probability distributions
-    probs_cond = F.softmax(sims_cond / temperature, dim=-1)     # [B, C1]
-    probs_uncond = F.softmax(sims_uncond / temperature, dim=-1) # [B, C2]
-
-    # Compute empirical class distributions (batch-level)
-    p_empirical_cond = probs_cond.mean(dim=0)  # [C1]
-    p_empirical_uncond = probs_uncond.mean(dim=0)  # [C2]
-
-    # Define uniform target distributions
-    uniform_cond = torch.full_like(p_empirical_cond, 1.0 / p_empirical_cond.size(0))
-    uniform_uncond = torch.full_like(p_empirical_uncond, 1.0 / p_empirical_uncond.size(0))
-
-    # Compute KL divergence between batch distributions and uniform
-    kl_cond = (p_empirical_cond * (p_empirical_cond / uniform_cond).log()).sum()
-    kl_uncond = (p_empirical_uncond * (p_empirical_uncond / uniform_uncond).log()).sum()
-
-    # Total loss and gradients
+    kl_cond = compute_kl(z_cond, attr_reps_cond)
+    kl_uncond = compute_kl(z_uncond, attr_reps_uncond)
     loss = loss_strength * (kl_cond + kl_uncond)
     grads = torch.autograd.grad(loss, sample)[0]
 
-    return grads, p_empirical_cond.detach().cpu(), kl_cond.detach().cpu(), loss.detach().cpu()
-
-@torch.enable_grad()
-def compute_sample_gradients(
-    sample: torch.Tensor,                # [2B, 1280, 8, 8], interleaved format
-    timestep: int,
-    class_index: int,
-    checkpoint_path: str,
-    centroid_path: str,
-    temperature: float = 8.0,
-) -> torch.Tensor:
-    device = sample.device
-    sample = sample.detach().requires_grad_()
-
-    model = make_model(checkpoint_path, device)
-    centroids_cond, centroids_uncond = load_dual_centroids(timestep, centroid_path)
-    centroids_cond = centroids_cond.to(device)
-    centroids_uncond = centroids_uncond.to(device)
-
-    cond_h = sample[1::2]
-    uncond_h = sample[0::2]
-    t_tensor = torch.full((cond_h.size(0),), timestep, dtype=torch.long, device=device)
-
-    z_cond = model(cond_h, t_tensor)      # [B, 512]
-    z_uncond = model(uncond_h, t_tensor)  # [B, 512]
-
-    sims_cond = F.cosine_similarity(z_cond.unsqueeze(1), centroids_cond.unsqueeze(0), dim=-1)
-    sims_uncond = F.cosine_similarity(z_uncond.unsqueeze(1), centroids_uncond.unsqueeze(0), dim=-1)
-
-    probs_cond = F.softmax(sims_cond / temperature, dim=-1)
-    probs_uncond = F.softmax(sims_uncond / temperature, dim=-1)
-
-    loss_cond = -probs_cond[:, class_index].sum()
-    loss_uncond = -probs_uncond[:, class_index].sum()
-    loss = loss_cond + loss_uncond
-
-    grads = torch.autograd.grad(loss, sample)[0]
-    return grads
+    return grads, kl_cond.detach().cpu(), kl_uncond.detach().cpu(), loss.detach().cpu()
