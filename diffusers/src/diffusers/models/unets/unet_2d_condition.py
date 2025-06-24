@@ -1109,8 +1109,7 @@ class UNet2DConditionModel(
         # on the fly if necessary.
         store = None
         probs_c, probs_u = None, None
-        # centroid_path = "centroids_recursive/weighted_centroids_pets.pt"
-        centroid_path = "attribute_value_representations.pt"
+        centroid_path = "centroids/centroids_pet.pt"
         all_timesteps = [1, 21, 41, 61, 81, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 521, 541, 561, 581, 601, 621, 641, 661, 681, 701, 721, 741, 761, 781, 801, 821, 841, 861, 881, 901, 921, 941, 961, 981]
         current_step_index = all_timesteps.index(int(timestep.item()))
 
@@ -1280,7 +1279,6 @@ class UNet2DConditionModel(
 
         h = sample.clone().detach()
 
-        # Check if vanilla or guided generation
         # from .helper_hclassify import compute_distribution_gradients
         from .new_helper_hclassify import compute_distribution_gradients
         
@@ -1312,23 +1310,19 @@ class UNet2DConditionModel(
         if loss_strength > 1 and timestep not in [981,961,941,921]:
             if not os.path.exists(checkpoint_path):
                 raise IOError("Classifier checkpoint not found", checkpoint_path)
-
             if mode == "distribution":
-                grads, probs_c, kl_div, loss = compute_distribution_gradients(
+                grads = compute_distribution_gradients(
                     sample=sample,
                     timestep=current_step_index,
                     checkpoint_path=checkpoint_path,
-                    attr_rep_path=centroid_path,
+                    centroid_path=centroid_path,
                     loss_strength=loss_strength,
                     temperature=8,
                 )
                 store = (grads*(scaling_strength*10**4)).clone().detach()
-                # print(f"Timestep : {timestep} \n Probs : {probs_c} \n KL: {kl_div} \n loss: {loss}")
             else:
                 raise NotImplementedError
-
             sample = sample.detach() - grads * (scaling_strength *  10**4)
-
 
 
         # 5. up

@@ -13,9 +13,10 @@ seed = 42
 device = 'cuda'
 NUM_IMAGES = 100
 BATCH_SIZE = 32
-PROMPT = "A photo of a train"
+CHECKPOINT = "pretrained/pet.pt"
+PROMPT = "Photo of a pet"
 NEG_PROMPT = "multiple, cartoonish, sketch, drawing, blurred, distorted"
-OUT_DIR = "train_outputs/original"
+OUT_DIR = "pet_outputs/original"
 # ---------------
 
 pipeline = DiffusionPipeline.from_pretrained(

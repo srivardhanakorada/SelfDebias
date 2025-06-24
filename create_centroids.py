@@ -2,13 +2,12 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 from sklearn.cluster import SpectralClustering
-from umap import UMAP
 from collections import defaultdict
 from tqdm import tqdm
 from glob import glob
 import matplotlib.pyplot as plt
+from umap import UMAP
 
 class HToCLIPJointContrast(nn.Module):
     def __init__(self, h_dim=1280 * 8 * 8, t_dim=128, proj_dim=512, hidden_dim=2048, num_timesteps=51):
@@ -28,13 +27,13 @@ class HToCLIPJointContrast(nn.Module):
         return F.normalize(self.mlp(x), dim=-1)
 
 # --- Config ---
-data_dir = "vhl_data/contrastive_triplets"
-model_path = "pretrained/our_vhl.pt"
-save_path = "centroids/centroids_vhl_spectral.pt"
-vis_dir = "centroids/umap_plots_vhl_spectral"
-device = "cuda:0"
+data_dir = "pet_data/contrastive_triplets"
+model_path = "pretrained/pet.pt"
+save_path = "centroids/centroids_pet.pt"
+vis_dir = "centroids/umap_plots_pet"
+device = "cuda"
 num_timesteps = 51
-k = 3
+k = 2
 os.makedirs(vis_dir, exist_ok=True)
 
 # --- Load model ---
@@ -95,18 +94,18 @@ for version in ["cond", "uncond"]:
         # print(f"[{version} | t={t:02d}] ⟨c0 · c1⟩ = {dot:.4f}")
 
         # --- UMAP Visualization
-        # reducer = UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
-        # vecs_2d = reducer.fit_transform(vecs_np)
-        # centers_2d = reducer.transform(reordered.numpy())
+        reducer = UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
+        vecs_2d = reducer.fit_transform(vecs_np)
+        centers_2d = reducer.transform(reordered.numpy())
 
-        # plt.figure(figsize=(6, 5))
-        # plt.scatter(vecs_2d[:, 0], vecs_2d[:, 1], c=labels, cmap='tab10', s=4, alpha=0.7)
-        # plt.scatter(centers_2d[:, 0], centers_2d[:, 1], c='black', s=60, marker='X', label='Centroids')
-        # plt.title(f"Spectral + UMAP - {version} - t={t}")
-        # plt.legend()
-        # plt.tight_layout()
-        # plt.savefig(os.path.join(vis_dir, f"{version}_t{t:02d}.png"))
-        # plt.close()
+        plt.figure(figsize=(6, 5))
+        plt.scatter(vecs_2d[:, 0], vecs_2d[:, 1], c=labels, cmap='tab10', s=4, alpha=0.7)
+        plt.scatter(centers_2d[:, 0], centers_2d[:, 1], c='black', s=60, marker='X', label='Centroids')
+        plt.title(f"Spectral + UMAP - {version} - t={t}")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(vis_dir, f"{version}_t{t:02d}.png"))
+        plt.close()
 
 # --- Save ---
 torch.save(centroids, save_path)

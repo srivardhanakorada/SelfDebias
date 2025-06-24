@@ -10,8 +10,8 @@ import matplotlib.image as mpimg
 from matplotlib import cm
 
 # --- CONFIG ---
-folder_path = "face_data/clip"         # Path to CLIP vector .pt files
-images_folder = "face_data/images"     # Path to image .png files
+folder_path = "pet_data/clip"         # Path to CLIP vector .pt files
+images_folder = "pet_data/images"     # Path to image .png files
 num_clusters = 2                       # Number of spectral clusters
 max_per_cluster = 5                    # Images to display per cluster
 
@@ -52,7 +52,7 @@ plt.tight_layout()
 plt.savefig("clip_vecs_clustered.png")
 plt.close()
 
-descriptions = ["photo of a man", "photo of a woman"]
+descriptions = ["photo of a dog", "photo of a cat"]
 
 
 # --- MAP FILES TO CLUSTERS ---
