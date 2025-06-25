@@ -16,6 +16,7 @@ from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+import os
 
 from ...configuration_utils import ConfigMixin, register_to_config
 from ...utils import BaseOutput
@@ -253,6 +254,11 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         timestep: Union[torch.Tensor, float, int],
         class_labels: Optional[torch.Tensor] = None,
         return_dict: bool = True,
+        scaling_strength: int = 1,
+        loss_strength: int = 1,
+        checkpoint_path: Union[str, os.PathLike] = os.getcwd(),
+        mode: str = "distribution",
+        ret_h: bool = False,
     ) -> Union[UNet2DOutput, Tuple]:
         r"""
         The [`UNet2DModel`] forward method.
@@ -271,6 +277,11 @@ class UNet2DModel(ModelMixin, ConfigMixin):
                 If `return_dict` is True, an [`~models.unets.unet_2d.UNet2DOutput`] is returned, otherwise a `tuple` is
                 returned where the first element is the sample tensor.
         """
+        store = None
+        probs_c, probs_u = None, None
+        centroid_path = "centroids/centroids_pet.pt"
+        # all_timesteps = [1, 21, 41, 61, 81, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 521, 541, 561, 581, 601, 621, 641, 661, 681, 701, 721, 741, 761, 781, 801, 821, 841, 861, 881, 901, 921, 941, 961, 981]
+        # current_step_index = all_timesteps.index(int(timestep.item())) #will introduce later
         # 0. center input if necessary
         if self.config.center_input_sample:
             sample = 2 * sample - 1.0
@@ -324,6 +335,10 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         # 4. mid
         if self.mid_block is not None:
             sample = self.mid_block(sample, emb)
+        
+        h = sample.clone().detach()
+        
+        #will add contrastive loss later
 
         # 5. up
         skip_sample = None
@@ -349,6 +364,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
             sample = sample / timesteps
 
         if not return_dict:
-            return (sample,)
+            if ret_h: return sample, h
+            return sample,None
 
         return UNet2DOutput(sample=sample)

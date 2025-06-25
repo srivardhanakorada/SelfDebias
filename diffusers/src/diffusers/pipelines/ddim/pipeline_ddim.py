@@ -15,6 +15,7 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
+import os
 
 from ...models import UNet2DModel
 from ...schedulers import DDIMScheduler
@@ -66,6 +67,12 @@ class DDIMPipeline(DiffusionPipeline):
         use_clipped_model_output: Optional[bool] = None,
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
+        scaling_strength: int = 1,
+        loss_strength: int = 1,
+        checkpoint_path: Union[str, os.PathLike] = os.getcwd(),
+        mode: str = "distribution",
+        ret_h: bool = False,
+        **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         r"""
         The call function to the pipeline for generation.
@@ -137,15 +144,16 @@ class DDIMPipeline(DiffusionPipeline):
                 f" size of {batch_size}. Make sure the batch size matches the length of the generators."
             )
 
-        image = randn_tensor(image_shape, generator=generator, device=self._execution_device, dtype=self.unet.dtype)
-
-        # set step values
+        image = randn_tensor(image_shape, generator=generator, device=self._execution_device, dtype=self.unet.dtype)        # set step values
         self.scheduler.set_timesteps(num_inference_steps)
+        h_vecs = []
+        grad_list = [] #do we need this??
+        all_probs = []
 
         for t in self.progress_bar(self.scheduler.timesteps):
             # 1. predict noise model_output
-            model_output = self.unet(image, t).sample
-
+            model_output, h = self.unet(image, t, return_dict=False, ret_h=True, checkpoint_path=checkpoint_path)
+            h_vecs.append(h)
             # 2. predict previous mean of image x_t-1 and add variance depending on eta
             # eta corresponds to η in paper and should be between [0, 1]
             # do x_t -> x_t-1
@@ -164,4 +172,6 @@ class DDIMPipeline(DiffusionPipeline):
         if not return_dict:
             return (image,)
 
-        return ImagePipelineOutput(images=image)
+        if ret_h:
+            return ImagePipelineOutput(images=image), h_vecs
+        return ImagePipelineOutput(images=image), None
