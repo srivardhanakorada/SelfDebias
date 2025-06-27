@@ -150,7 +150,7 @@ class DDIMPipeline(DiffusionPipeline):
         grad_list = [] #do we need this??
         all_probs = []
 
-        for t in self.progress_bar(self.scheduler.timesteps):
+        for t in self.scheduler.timesteps:
             # 1. predict noise model_output
             model_output, h = self.unet(image, t, return_dict=False, ret_h=True, checkpoint_path=checkpoint_path)
             h_vecs.append(h)

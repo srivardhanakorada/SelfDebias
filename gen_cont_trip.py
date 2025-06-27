@@ -18,21 +18,21 @@ preprocess_aug = T.Compose([
 ])
 
 # Paths
-H_DIR = "pet_data/h"
-IMG_DIR = "pet_data/images"
-OUT_DIR = "pet_data/contrastive_triplets"
+H_DIR = "/kaggle/input/ddim-dataset/dataset/h"
+IMG_DIR = "/kaggle/input/ddim-dataset/dataset/images"
+OUT_DIR = "/kaggle/temp/contrastive_triplets"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-num_timesteps = 51
-versions = ["cond", "uncond"]  # i=0 for cond, i=1 for uncond
+num_timesteps = 50
+# versions = ["cond", "uncond"]  # i=0 for cond, i=1 for uncond
 
 for fname in tqdm(sorted(os.listdir(H_DIR))):
     if not fname.endswith(".pt"):
         continue
 
     idx = fname.replace(".pt", "")
-    h_full = torch.load(os.path.join(H_DIR, fname))  # Interleaved: cond_0, uncond_0, ..., cond_50, uncond_50
-    assert len(h_full) == 102, f"{fname} does not have 102 entries."
+    h_full = torch.load(os.path.join(H_DIR, fname))  # Interleaved: cond_0, uncond_0, ..., cond_50, uncond_50, this is for stable diffusion though
+    assert len(h_full) == 50, f"{fname} does not have 50 entries."
 
     img_path = os.path.join(IMG_DIR, f"{idx}.png")
     if not os.path.exists(img_path):
@@ -53,15 +53,22 @@ for fname in tqdm(sorted(os.listdir(H_DIR))):
     sample_dict = {"cond": [], "uncond": []}
 
     for t in range(num_timesteps):
-        for i, version in enumerate(versions):  # 0=cond, 1=uncond
-            h_t = h_full[t * 2 + i].to(torch.float32)
+        h_t = h_full[t].to(torch.float32)  # h_full[t] is a tensor of shape [channels, height, width]
+        sample_dict.append({
+            "h": h_t.cpu(),
+            "clip_base": clip_base,
+            "clip1": clip1,
+            "clip2": clip2,
+            "t": t
+        })
+        # h_t = h_full[t * 2 + i].to(torch.float32)
 
-            sample_dict[version].append({
-                "h": h_t.cpu(),
-                "clip_base": clip_base,
-                "clip1": clip1,
-                "clip2": clip2,
-                "t": t
-            })
+        # sample_dict[version].append({
+        #     "h": h_t.cpu(),
+        #     "clip_base": clip_base,
+        #     "clip1": clip1,
+        #     "clip2": clip2,
+        #     "t": t
+        # })
 
     torch.save(sample_dict, os.path.join(OUT_DIR, f"{idx}.pt"))
