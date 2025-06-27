@@ -50,11 +50,11 @@ for fname in tqdm(sorted(os.listdir(H_DIR))):
         clip1 = clip_model.encode_image(img1).squeeze(0).cpu()
         clip2 = clip_model.encode_image(img2).squeeze(0).cpu()
 
-    sample_dict = {"cond": [], "uncond": []}
+    sample_list = []
 
     for t in range(num_timesteps):
         h_t = h_full[t].to(torch.float32)  # h_full[t] is a tensor of shape [channels, height, width]
-        sample_dict.append({
+        sample_list.append({
             "h": h_t.cpu(),
             "clip_base": clip_base,
             "clip1": clip1,
@@ -71,4 +71,4 @@ for fname in tqdm(sorted(os.listdir(H_DIR))):
         #     "t": t
         # })
 
-    torch.save(sample_dict, os.path.join(OUT_DIR, f"{idx}.pt"))
+    torch.save(sample_list, os.path.join(OUT_DIR, f"{idx}.pt"))
