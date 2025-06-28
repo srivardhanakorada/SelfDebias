@@ -11,17 +11,27 @@ from tqdm import tqdm
 class ContrastiveTripletDataset(torch.utils.data.Dataset):
     def __init__(self, root_dir):
         self.paths = sorted([os.path.join(root_dir, f) for f in os.listdir(root_dir) if f.endswith(".pt")])
-        self.versions = ["cond", "uncond"]
-        self.num_timesteps = 51
-        self.samples = [(path, v, t) for path in self.paths for v in self.versions for t in range(self.num_timesteps)]
+        # self.versions = ["cond", "uncond"] for SD
+        self.num_timesteps = 50 
+        self.samples = [(path, t) for path in self.paths for t in range(self.num_timesteps)]
+        self.caching_dict = {}
+        self.preprocess()
 
     def __len__(self):
         return len(self.samples)
+    
+    def preprocess(self):
+        print("starting preprocessing...")
+        for i in self.paths:
+            data = torch.load(i)
+            self.caching_dict[i] = data
+        print("preprocessing done.")
 
     def __getitem__(self, idx):
-        path, version, t = self.samples[idx]
-        data = torch.load(path)
-        entry = data[version][t]
+        path, t = self.samples[idx]
+        # data = torch.load(path)
+        data = self.caching_dict[path]
+        entry = data[t]
         return {
             "h": entry["h"],
             "clip_base": entry["clip_base"],
@@ -31,7 +41,7 @@ class ContrastiveTripletDataset(torch.utils.data.Dataset):
         }
 
 class HToCLIPJointContrast(nn.Module):
-    def __init__(self, h_dim=1280 * 8 * 8, t_dim=128, proj_dim=512, hidden_dim=2048, num_timesteps=51):
+    def __init__(self, h_dim=512 * 8 * 8, t_dim=128, proj_dim=512, hidden_dim=2048, num_timesteps=50):
         super().__init__()
         self.t_embed = nn.Embedding(num_timesteps, t_dim)
         self.mlp = nn.Sequential(
@@ -54,7 +64,7 @@ def nt_xent_loss(z_pred, z1, z2, temperature=0.1):
     pos_sim = F.cosine_similarity(z_pred, z1, dim=-1) + F.cosine_similarity(z_pred, z2, dim=-1)
     return -pos_sim.mean() / temperature
 
-def plot_umap(preds, targets, epoch, out_dir="umap_plots/pets"):
+def plot_umap(preds, targets, epoch, out_dir="/kaggle/working/umap_plots"):
     os.makedirs(out_dir, exist_ok=True)
     sample_size = min(500, len(preds))
     idxs = np.random.choice(len(preds), sample_size, replace=False)
@@ -109,20 +119,20 @@ def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
 
         avg_loss = total_loss / len(dataloader)
         avg_cosine = np.mean(all_cosines)
-        print(f"Epoch {epoch} - Loss: {avg_loss:.4f} | Cosine Sim: {avg_cosine:.4f}")
+        print(f"Epoch {epoch} - Loss: {avg_loss:.8f} | Cosine Sim: {avg_cosine:.8f}")
 
         if preds_t25:
             plot_umap(np.vstack(preds_t25), np.vstack(targets_t25), epoch)
 
-        os.makedirs("checkpoints", exist_ok=True)
-        torch.save(model.state_dict(), f"checkpoints/pet.pt")
+        os.makedirs("/kaggle/working/checkpoints", exist_ok=True)
+        torch.save(model.state_dict(), f"/kaggle/working/checkpoints/epoch_"+str(epoch)+".pt")
 
 # === CONFIGURATION ===
-root_dir = "pet_data/contrastive_triplets"
+root_dir = "/kaggle/input/contrastive-triplets-ddim/contrastive_triplets"
 dataset = ContrastiveTripletDataset(root_dir)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 
 model = HToCLIPJointContrast().cuda()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda")
+train_contrastive(model, dataloader, optimizer, epochs=50, device="cuda")
