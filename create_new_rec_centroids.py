@@ -12,7 +12,7 @@ from matplotlib.cm import get_cmap
 
 # --- Config ---
 data_dir = "/home/teja/three/shrikrishna/contrastive_triplets"
-clip_dir = "pet_data/clip"
+clip_dir = "/home/teja/three/shrikrishna/clip"
 model_path = "/home/teja/three/shrikrishna/hspace_to_clip/epoch_50.pt"
 save_path = "/home/teja/three/shrikrishna/centroids/sweighted_centroids_celebA.pt"
 umap_save_dir = "/home/teja/three/shrikrishna/centroids/umap_cond"
