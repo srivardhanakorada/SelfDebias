@@ -23,7 +23,7 @@ device = "cuda"
 num_timesteps = 50
 MAX_DEPTH = 1
 MIN_CLUSTER_SIZE = 200
-UMAP_TIMESTEPS = [1, 5, 10, 25, 50]
+UMAP_TIMESTEPS = [0, 4, 9, 24, 49]
 UMAP_SAMPLES_PER_T = 1000
 
 log_lines = []
