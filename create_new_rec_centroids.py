@@ -44,9 +44,9 @@ class HToCLIPJointContrast(nn.Module):
         )
 
     def forward(self, h, t):
-        print("h shape:", h.shape)
-        print("t shape:", t.shape)
-        h = h.view(h.size(0), -1)
+        # print("h shape:", h.shape)
+        # print("t shape:", t.shape)
+        h = h.reshape(h.size(0), -1)
         t_emb = self.t_embed(t)
         x = torch.cat([h, t_emb], dim=-1)
         return F.normalize(self.mlp(x), dim=-1)
