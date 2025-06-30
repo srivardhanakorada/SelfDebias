@@ -1,0 +1,159 @@
+t=00 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=01 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=02 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=03 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=04 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=05 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=06 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=07 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=08 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=09 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=10 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=11 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=12 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=13 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=14 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=15 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=16 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=17 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=18 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=19 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=20 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=21 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=22 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=23 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=24 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=25 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=26 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=27 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=28 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=29 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=30 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=31 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=32 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=33 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=34 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=35 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=36 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=37 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=38 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=39 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=40 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=41 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=42 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=43 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=44 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=45 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=46 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=47 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=48 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+t=49 | Top-level k=2
+  - Top Cluster 0: 1 subclusters
+  - Top Cluster 1: 1 subclusters
+
+✅ Saved temporally ordered centroids + weights → /home/teja/three/shrikrishna/centroids/sweighted_centroids_celebA.pt
+🧠 Cosine Similarity @ t=00 → 0.8942
+🧠 Cosine Similarity @ t=04 → 0.9004
+🧠 Cosine Similarity @ t=09 → 0.9020
+🧠 Cosine Similarity @ t=24 → 0.9029
+🧠 Cosine Similarity @ t=49 → 0.8992
+
+✅ UMAPs saved with cluster coloring in: /home/teja/three/shrikrishna/centroids/umap_cond
