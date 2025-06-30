@@ -1,6 +1,6 @@
 import os
 import torch
-from diffusers import DiffusionPipeline
+from diffusers import DDIMPipeline
 from tqdm import tqdm
 
 def save_images(images, folder, prefix):
@@ -17,7 +17,7 @@ NEG_PROMPT = "(((deformed))), grayscale, closeup, cartoonish, unrealistic, blurr
 FOLDER = '/home/teja/three/shrikrishna/clip_debiasing_gen_models/ddim_outputs'
 CHECKPOINT = "/home/teja/three/shrikrishna/hspace_to_clip/epoch_50.pt"
 
-pipeline = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to(device)
+pipeline = DDIMPipeline.from_pretrained("google/ddpm-celebahq-256", torch_dtype=torch.float16).to(device)
 
 # ORIGINAL (Vanilla)
 all_original = []
