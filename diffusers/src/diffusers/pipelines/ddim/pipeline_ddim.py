@@ -49,13 +49,12 @@ class DDIMPipeline(DiffusionPipeline):
 
     model_cpu_offload_seq = "unet"
 
-    def __init__(self, unet: UNet2DModel, scheduler: DDIMScheduler, folder):
+    def __init__(self, unet: UNet2DModel, scheduler: DDIMScheduler):
         super().__init__()
 
         # make sure scheduler can always be converted to DDIM
         scheduler = DDIMScheduler.from_config(scheduler.config)
-        self.folder = folder
-        os.makedirs(self.folder, exist_ok=True)
+        self.folder = '/home/teja/three/shrikrishna/clip_debiasing_gen_models/ddim_outputs'
         self.register_modules(unet=unet, scheduler=scheduler)
 
     @torch.no_grad()
