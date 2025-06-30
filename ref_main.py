@@ -21,8 +21,9 @@ pipeline = DDIMPipeline.from_pretrained("google/ddpm-celebahq-256", torch_dtype=
 
 # ORIGINAL (Vanilla)
 all_original = []
+print("Starting original generation...")
 # for i in tqdm(range(0, NUM_IMAGES, BATCH_SIZE),desc="Original"):
-for i in range(0,2000):
+for i in tqdm(range(0,2000), desc="Original"):
     # result,_ = pipeline(
     #     prompt=PROMPT,
     #     generator=torch.Generator(device).manual_seed(seed + i),
@@ -36,11 +37,13 @@ for i in range(0,2000):
         generator=torch.Generator(device).manual_seed(seed + i),        
     )
     all_original.extend(result.images)
+print("Saving images to : "+ FOLDER+"/original_ddim/")
 save_images(all_original, FOLDER+"/original_ddim/", "original")
 
 # DEBIASED
 all_debiased = []
-for i in range(0,2000):
+print("Starting debiasing...")
+for i in tqdm(range(0,2000), desc="Debiased"):
     result,grad_list = pipeline(
         generator=torch.Generator(device).manual_seed(seed + i),
         loss_strength=500,
@@ -49,4 +52,5 @@ for i in range(0,2000):
         mode="distribution",
     )
     all_debiased.extend(result.images)
+print("Saving images to : "+ FOLDER+"/debiased_ddim/")
 save_images(all_debiased, FOLDER+"/debiased_ddim/", "debiased")
