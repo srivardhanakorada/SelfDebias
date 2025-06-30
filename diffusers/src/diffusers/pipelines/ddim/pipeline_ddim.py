@@ -49,12 +49,13 @@ class DDIMPipeline(DiffusionPipeline):
 
     model_cpu_offload_seq = "unet"
 
-    def __init__(self, unet: UNet2DModel, scheduler: DDIMScheduler):
+    def __init__(self, unet: UNet2DModel, scheduler: DDIMScheduler, folder):
         super().__init__()
 
         # make sure scheduler can always be converted to DDIM
         scheduler = DDIMScheduler.from_config(scheduler.config)
-
+        self.folder = folder
+        os.makedirs(self.folder, exist_ok=True)
         self.register_modules(unet=unet, scheduler=scheduler)
 
     @torch.no_grad()
@@ -152,7 +153,9 @@ class DDIMPipeline(DiffusionPipeline):
 
         for t in self.scheduler.timesteps:
             # 1. predict noise model_output
-            model_output, h = self.unet(image, t, return_dict=False, ret_h=True, checkpoint_path=checkpoint_path)
+            model_output, h, probs = self.unet(image, t, return_dict=False, ret_h=True, checkpoint_path=checkpoint_path,scaling_strength=scaling_strength, loss_strength=loss_strength, mode=mode, **kwargs)
+            if probs is not None:
+                all_probs.append(probs)
             h_vecs.append(h)
             # 2. predict previous mean of image x_t-1 and add variance depending on eta
             # eta corresponds to η in paper and should be between [0, 1]
@@ -164,6 +167,23 @@ class DDIMPipeline(DiffusionPipeline):
             if XLA_AVAILABLE:
                 xm.mark_step()
 
+        
+        if len(all_probs) > 0:
+            import matplotlib.pyplot as plt
+            import numpy as np
+            all_probs = np.stack(all_probs)
+
+            plt.figure(figsize=(10, 4))
+            plt.plot(all_probs[:, 0], label="DDIM → Cluster 0")
+            plt.plot(all_probs[:, 1], label="DDIM → Cluster 1")
+            plt.xlabel("Timestep")
+            plt.ylabel("Avg. Cluster Probability")
+            plt.title("Cluster Identity Consistency Over Time")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(self.folder+"/cluster_consistency_plot.png")
+        
         image = (image / 2 + 0.5).clamp(0, 1)
         image = image.cpu().permute(0, 2, 3, 1).numpy()
         if output_type == "pil":

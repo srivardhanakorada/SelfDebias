@@ -14,39 +14,39 @@ NUM_IMAGES = 1000
 BATCH_SIZE = 16
 PROMPT = "a photo of a person, single person, single face, ultra detailed, raw photo, realistic face"
 NEG_PROMPT = "(((deformed))), grayscale, closeup, cartoonish, unrealistic, blurry, bad anatomy, disfigured, poorly drawn face, mutation, mutated, (extra_limb), (ugly), (poorly drawn hands), fused fingers, messy drawing, broken legs censor, censored, censor_bar, multiple breasts, (mutated hands and fingers:1.5), (long body :1.3), (mutation, poorly drawn :1.2), black-white, bad anatomy, liquid body, liquidtongue, disfigured, malformed, mutated, anatomical nonsense, text font ui, error, malformed hands, long neck, blurred, lowers, low res, bad anatomy, bad proportions, bad shadow, uncoordinated body, unnatural body, fused breasts, bad breasts, huge breasts, poorly drawn breasts, extra breasts, liquid breasts, heavy breasts, missingbreasts, huge haunch, huge thighs, huge calf, bad hands, fused hand, missing hand, disappearing arms, disappearing thigh, disappearing calf, disappearing legs, fusedears, bad ears, poorly drawn ears, extra ears, liquid ears, heavy ears, missing ears, old photo, low res, black and white, black and white filter, colorless, (((deformed))), blurry, bad anatomy, disfigured, poorly drawn face, mutation, mutated, (extra_limb), (ugly), (poorly drawn hands), fused fingers, messy drawing, broken legs censor, censored, censor_bar, multiple breasts, (mutated hands and fingers:1.5), (long body :1.3), (mutation, poorly drawn :1.2), black-white, bad anatomy, liquid body, liquid tongue, disfigured, malformed, mutated, anatomical nonsense, text font ui, error, malformed hands, long neck, blurred, lowers, low res, bad anatomy, bad proportions, bad shadow, uncoordinated body, unnatural body, fused breasts, bad breasts, huge breasts, poorly drawn breasts, extra breasts, liquid breasts, heavy breasts, missing breasts, huge haunch, huge thighs, huge calf, bad hands, fused hand, missing hand, disappearing arms, disappearing thigh, disappearing calf, disappearing legs, fused ears, bad ears, poorly drawn ears, extra ears, liquid ears, heavy ears, missing ears, old photo, low res, black and white, black and white filter, colorless, (((deformed))), blurry, bad anatomy, disfigured, poorly drawn face, mutation, mutated, (extra_limb), (ugly), (poorly drawn hands), fused fingers, messy drawing, broken legs censor, censored, censor_bar, multiple breasts, (mutated hands and fingers:1.5), (long body :1.3), (mutation, poorly drawn :1.2), black-white, bad anatomy, liquid body, liquid tongue, disfigured, malformed, mutated, anatomical nonsense, text font ui, error, malformed hands, long neck, blurred, lowers, low res, bad anatomy, bad proportions, bad shadow, uncoordinated body, unnatural body, fused breasts, bad breasts, huge breasts, poorly drawn breasts, extra breasts, liquid breasts, heavy breasts, missing breasts, huge haunch, huge thighs, huge calf, bad hands, fused hand, missing hand, disappearing arms, disappearing thigh, disappearing calf, disappearing legs, fused ears, bad ears, poorly drawn ears, extra ears, liquid ears, heavy ears, missing ears, (((deformed))), blurry, bad anatomy, disfigured, poorly drawn face, mutation, mutated, (extra_limb), (ugly), (poorly drawn hands), fused fingers, messy drawing, broken legs censor, censored, censor_bar, multiple breasts, (mutated hands and fingers:1.5), (long body :1.3), (mutation, poorly drawn :1.2), black-white, bad anatomy, liquid body, liquidtongue, disfigured, malformed, mutated, anatomical nonsense, text font ui, error, malformed hands, long neck, blurred, lowers, low res, bad anatomy, bad proportions, bad shadow, uncoordinated body, unnatural body, fused breasts, bad breasts, huge breasts, poorly drawn breasts, extra breasts, liquid breasts, heavy breasts, missingbreasts, huge haunch, huge thighs, huge calf, bad hands, fused hand, missing hand, disappearing arms, disappearing thigh, disappearing calf, disappearing legs, fusedears, bad ears, poorly drawn ears, extra ears, liquid ears, heavy ears, missing ears"
-
-CHECKPOINT = "pretrained/their.pt"
+FOLDER = '/home/teja/three/shrikrishna/clip_debiasing_gen_models/ddim_outputs'
+CHECKPOINT = "/home/teja/three/shrikrishna/hspace_to_clip/epoch_50.pt"
 
 pipeline = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to(device)
 
 # ORIGINAL (Vanilla)
-# all_original = []
+all_original = []
 # for i in tqdm(range(0, NUM_IMAGES, BATCH_SIZE),desc="Original"):
-#     result,_ = pipeline(
-#         prompt=PROMPT,
-#         generator=torch.Generator(device).manual_seed(seed + i),
-#         guidance_scale=7.5,
-#         num_images_per_prompt=BATCH_SIZE,
-#         negative_prompt=NEG_PROMPT,
-#         checkpoint_path=CHECKPOINT,
-#         mode="distribution",
-#     )
-#     all_original.extend(result.images)
-# save_images(all_original, "their_outputs/original", "original")
+for i in range(0,2000):
+    # result,_ = pipeline(
+    #     prompt=PROMPT,
+    #     generator=torch.Generator(device).manual_seed(seed + i),
+    #     guidance_scale=7.5,
+    #     num_images_per_prompt=BATCH_SIZE,
+    #     negative_prompt=NEG_PROMPT,
+    #     checkpoint_path=CHECKPOINT,
+    #     mode="distribution",
+    # )
+    result,_ = pipeline(
+        generator=torch.Generator(device).manual_seed(seed + i),        
+    )
+    all_original.extend(result.images)
+save_images(all_original, FOLDER+"/original_ddim/", "original")
 
 # DEBIASED
 all_debiased = []
-for i in tqdm(range(0, NUM_IMAGES, BATCH_SIZE),desc="Debiased"):
+for i in range(0,2000):
     result,grad_list = pipeline(
-        prompt=PROMPT,
         generator=torch.Generator(device).manual_seed(seed + i),
-        guidance_scale=7.5,
-        num_images_per_prompt=BATCH_SIZE,
-        negative_prompt=NEG_PROMPT,
         loss_strength=500,
         scaling_strength=600,
         checkpoint_path=CHECKPOINT,
         mode="distribution",
     )
     all_debiased.extend(result.images)
-save_images(all_debiased, "their_outputs/debiased", "debiased")
+save_images(all_debiased, FOLDER+"/debiased_ddim/", "debiased")
