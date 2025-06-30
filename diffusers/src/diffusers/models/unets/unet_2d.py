@@ -283,7 +283,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         probs =  None
         centroid_path = "/home/teja/three/shrikrishna/centroids/sweighted_centroids_celebA.pt"
         all_timesteps = [1, 21, 41, 61, 81, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 521, 541, 561, 581, 601, 621, 641, 661, 681, 701, 721, 741, 761, 781, 801, 821, 841, 861, 881, 901, 921, 941, 961, 981]
-        current_step_index = all_timesteps.index(int(timestep.item())) #will introduce later
+        current_step_index = all_timesteps.index(int(timestep.item())+1) #will introduce later
         # 0. center input if necessary
         if self.config.center_input_sample:
             sample = 2 * sample - 1.0
