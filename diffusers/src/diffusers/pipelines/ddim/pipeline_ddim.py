@@ -153,7 +153,7 @@ class DDIMPipeline(DiffusionPipeline):
 
         for t in self.scheduler.timesteps:
             # 1. predict noise model_output
-            model_output, h, probs = self.unet(image, t, return_dict=False, ret_h=ret_h, checkpoint_path=checkpoint_path,scaling_strength=scaling_strength, loss_strength=loss_strength, mode=mode, **kwargs)
+            model_output, h, probs = self.unet(image, t, return_dict=False, ret_h=ret_h, checkpoint_path=checkpoint_path,scaling_strength=scaling_strength, loss_strength=loss_strength, mode=mode)
             if probs is not None:
                 all_probs.append(probs)
             h_vecs.append(h)
