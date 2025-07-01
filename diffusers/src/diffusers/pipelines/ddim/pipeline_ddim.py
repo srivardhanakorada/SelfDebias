@@ -74,7 +74,6 @@ class DDIMPipeline(DiffusionPipeline):
         mode: str = "distribution",
         ret_h: bool = False,
         batch_no: int = 0
-        **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         r"""
         The call function to the pipeline for generation.
