@@ -16,7 +16,8 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 import os
-
+import matplotlib.pyplot as plt
+import numpy as np
 from ...models import UNet2DModel
 from ...schedulers import DDIMScheduler
 from ...utils import is_torch_xla_available
@@ -72,6 +73,7 @@ class DDIMPipeline(DiffusionPipeline):
         checkpoint_path: Union[str, os.PathLike] = os.getcwd(),
         mode: str = "distribution",
         ret_h: bool = False,
+        batch_no: int = 0
         **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         r"""
@@ -152,7 +154,7 @@ class DDIMPipeline(DiffusionPipeline):
 
         for t in self.scheduler.timesteps:
             # 1. predict noise model_output
-            model_output, h, probs = self.unet(image, t, return_dict=False, ret_h=True, checkpoint_path=checkpoint_path,scaling_strength=scaling_strength, loss_strength=loss_strength, mode=mode, **kwargs)
+            model_output, h, probs = self.unet(image, t, return_dict=False, ret_h=ret_h, checkpoint_path=checkpoint_path,scaling_strength=scaling_strength, loss_strength=loss_strength, mode=mode, **kwargs)
             if probs is not None:
                 all_probs.append(probs)
             h_vecs.append(h)
@@ -168,8 +170,7 @@ class DDIMPipeline(DiffusionPipeline):
 
         
         if len(all_probs) > 0:
-            import matplotlib.pyplot as plt
-            import numpy as np
+
             all_probs = np.stack(all_probs)
 
             plt.figure(figsize=(10, 4))
@@ -181,7 +182,7 @@ class DDIMPipeline(DiffusionPipeline):
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
-            plt.savefig(self.folder+"/cluster_consistency_plot.png")
+            plt.savefig(self.folder+"/cluster_consistency_plot/cluster_consistency_plot_"+str(batch_no)+".png")
         
         image = (image / 2 + 0.5).clamp(0, 1)
         image = image.cpu().permute(0, 2, 3, 1).numpy()
