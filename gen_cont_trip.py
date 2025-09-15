@@ -4,6 +4,11 @@ import torchvision.transforms as T
 from PIL import Image
 from tqdm import tqdm
 import clip
+import time
+from datetime import datetime
+
+print(f"Start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+start_time = time.time()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 clip_model, preprocess_base = clip.load("ViT-B/32", device=device)
@@ -18,15 +23,18 @@ preprocess_aug = T.Compose([
 ])
 
 # Paths
-H_DIR = "pet_data/h"
-IMG_DIR = "pet_data/images"
-OUT_DIR = "pet_data/contrastive_triplets"
+base_path = "/home/teja/three/vardhan/wacv_work/final_data"
+H_DIR = f"{base_path}/face/h"
+IMG_DIR = f"{base_path}/face/images"
+OUT_DIR = f"{base_path}/face/contrastive_triplets"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 num_timesteps = 51
 versions = ["cond", "uncond"]  # i=0 for cond, i=1 for uncond
+to_remove = [233, 292, 307, 314, 320, 400, 575, 955, 1419, 1460, 1463]
 
-for fname in tqdm(sorted(os.listdir(H_DIR))):
+for i,fname in tqdm(enumerate(sorted(os.listdir(H_DIR)))):
+    if i in to_remove: continue
     if not fname.endswith(".pt"):
         continue
 
@@ -65,3 +73,7 @@ for fname in tqdm(sorted(os.listdir(H_DIR))):
             })
 
     torch.save(sample_dict, os.path.join(OUT_DIR, f"{idx}.pt"))
+
+end_time = time.time()
+print(f"End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"Total time taken: {(end_time - start_time)/60:.2f} minutes")

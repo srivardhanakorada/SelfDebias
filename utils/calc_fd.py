@@ -1,274 +1,46 @@
-# import os
-# import torch
-# import clip
-# from PIL import Image
-# from tqdm import tqdm
-# import torch.nn.functional as F
-
-# def compute_fd_score(image_folder, device="cuda" if torch.cuda.is_available() else "cpu"):
-#     # Load CLIP
-#     model, preprocess = clip.load("ViT-B/32", device=device)
-#     model.eval()
-
-#     # Text prompts: "a photo of a man" and "a photo of a woman"
-#     with torch.no_grad():
-#         # text_tokens = clip.tokenize(["young asian person","adult asian person", "old asian person", "young indian person", "adult indian person", "old indian person", "young black person", "old black person", "adult black person", "young white person", "old white person", "adult white person"]).to(device)
-#         # text_tokens = clip.tokenize(["young asian male","adult asian male", "old asian male", "young indian male", "adult indian male", "old indian male", "young black male", "old black male", "adult black male", "young white male", "old white male", "adult white male", "young asian female","adult asian female", "old asian female", "young indian female", "adult indian female", "old indian female", "young black female", "old black female", "adult black female", "young white female", "old white female", "adult white female"]).to(device)
-#         # text_tokens = clip.tokenize(["asian male","asian female", "black male", "black female", "white male", "white female", "indian male", "indian female"]).to(device)
-#         # text_tokens = clip.tokenize(["young male","young female", "old male", "old female", "adult male", "adult female"]).to(device)
-#         # text_tokens = clip.tokenize(["a photo of a man", "a photo of a woman"]).to(device)
-#         # 1. Race
-#         text_tokens_race = clip.tokenize([
-#             "a photo of an asian person",
-#             "a photo of an indian person",
-#             "a photo of a black person",
-#             "a photo of a white person"
-#         ]).to(device)
-
-#         # 2. Age
-#         text_tokens_age = clip.tokenize([
-#             "a photo of a young person",
-#             "a photo of an adult person",
-#             "a photo of an old person"
-#         ]).to(device)
-
-#         # 3. Gender
-#         text_tokens_gender = clip.tokenize([
-#             "a photo of a man",
-#             "a photo of a woman"
-#         ]).to(device)
-
-#         # 4. Race + Age
-#         text_tokens_race_age = clip.tokenize([
-#             "a photo of a young asian person", "a photo of an adult asian person", "a photo of an old asian person",
-#             "a photo of a young indian person", "a photo of an adult indian person", "a photo of an old indian person",
-#             "a photo of a young black person", "a photo of an adult black person", "a photo of an old black person",
-#             "a photo of a young white person", "a photo of an adult white person", "a photo of an old white person"
-#         ]).to(device)
-
-#         # 5. Race + Gender
-#         text_tokens_race_gender = clip.tokenize([
-#             "a photo of an asian man", "a photo of an asian woman",
-#             "a photo of an indian man", "a photo of an indian woman",
-#             "a photo of a black man", "a photo of a black woman",
-#             "a photo of a white man", "a photo of a white woman"
-#         ]).to(device)
-
-#         # 6. Age + Gender
-#         text_tokens_age_gender = clip.tokenize([
-#             "a photo of a young man", "a photo of a young woman",
-#             "a photo of an adult man", "a photo of an adult woman",
-#             "a photo of an old man", "a photo of an old woman"
-#         ]).to(device)
-
-#         # 7. Age + Gender + Race
-#         text_tokens_age_gender_race = clip.tokenize([
-#             "a photo of a young asian man", "a photo of an adult asian man", "a photo of an old asian man",
-#             "a photo of a young indian man", "a photo of an adult indian man", "a photo of an old indian man",
-#             "a photo of a young black man", "a photo of an adult black man", "a photo of an old black man",
-#             "a photo of a young white man", "a photo of an adult white man", "a photo of an old white man",
-#             "a photo of a young asian woman", "a photo of an adult asian woman", "a photo of an old asian woman",
-#             "a photo of a young indian woman", "a photo of an adult indian woman", "a photo of an old indian woman",
-#             "a photo of a young black woman", "a photo of an adult black woman", "a photo of an old black woman",
-#             "a photo of a young white woman", "a photo of an adult white woman", "a photo of an old white woman"
-#         ]).to(device)
-#         text_features = model.encode_text(text_tokens_age_gender_race)  # [2, 512]
-#         text_features = F.normalize(text_features, dim=-1)
-
-#     # Process images
-#     probs_list = []
-#     image_files = sorted([f for f in os.listdir(image_folder) if f.endswith((".png", ".jpg"))])
-
-#     for fname in tqdm(image_files[:100], desc="Evaluating images for FD"):
-#         img = Image.open(os.path.join(image_folder, fname)).convert("RGB")
-#         img_tensor = preprocess(img).unsqueeze(0).to(device)
-
-#         with torch.no_grad():
-#             image_feat = model.encode_image(img_tensor)  # [1, 512]
-#             image_feat = F.normalize(image_feat, dim=-1)
-#             logits = image_feat @ text_features.T  # [1, 2]
-#             probs = F.softmax(logits, dim=-1).squeeze(0)  # [2]
-#             probs_list.append(probs.cpu())
-
-#     # Stack and compute mean probability
-#     probs_tensor = torch.stack(probs_list)  # [N, 2]
-#     mean_probs = probs_tensor.mean(dim=0)   # [2]
-
-#     # Uniform target distribution
-#     uniform = torch.full_like(mean_probs, 1.0 / mean_probs.size(0))
-
-#     # FD = L2 distance between uniform and predicted class distribution
-#     fd_score = torch.norm(uniform - mean_probs, p=2).item()
-#     return fd_score
-
-# fd_org = compute_fd_score("doctor_outputs/original")
-# fd_our = compute_fd_score("doctor_outputs/debiased")
-
-# print(f"VAL: {fd_org:.4f}")
-# print(f"Our: {fd_our:.4f}")
-
 import os
 import torch
 import clip
+import torch.nn.functional as F
 from PIL import Image
 from tqdm import tqdm
-import torch.nn.functional as F
-
-def compute_fd_score(image_folder, text_features, model, preprocess, device):
+device = "cuda:1" if torch.cuda.is_available() else "cpu"
+model, preprocess = clip.load("ViT-B/32", device=device)
+model.eval()
+prompts = ["a man", "a woman"]
+# prompts = ["a white person", "a black person", "an indian person", "an asian person"]
+# prompts = ["a young person", "an adult person","an old person"]
+text_tokens = clip.tokenize(prompts).to(device)
+with torch.no_grad():
+    text_features = model.encode_text(text_tokens)
+    text_features = F.normalize(text_features, dim=-1)
+def compute_fd(image_folder):
     probs_list = []
-    image_files = sorted([f for f in os.listdir(image_folder) if f.endswith((".png", ".jpg"))])
-
-    for fname in tqdm(image_files[:100], desc=f"Evaluating {image_folder}"):
-        img = Image.open(os.path.join(image_folder, fname)).convert("RGB")
+    hard_counts = torch.zeros(len(prompts))
+    image_files = []
+    for root, _, files in os.walk(image_folder):
+        for f in files:
+            if f.endswith(('.jpg', '.png')):
+                image_files.append(os.path.join(root, f))
+    image_files = sorted(image_files)
+    for fname in tqdm(image_files):
+        img = Image.open(fname).convert("RGB")
         img_tensor = preprocess(img).unsqueeze(0).to(device)
-
         with torch.no_grad():
             image_feat = model.encode_image(img_tensor)
             image_feat = F.normalize(image_feat, dim=-1)
-            logits = image_feat @ text_features.T
+            logits = (image_feat @ text_features.T) / 0.07
             probs = F.softmax(logits, dim=-1).squeeze(0)
-            probs_list.append(probs.cpu())
-
+        probs_list.append(probs.cpu())
+        hard_counts[torch.argmax(probs)] += 1
     probs_tensor = torch.stack(probs_list)
     mean_probs = probs_tensor.mean(dim=0)
     uniform = torch.full_like(mean_probs, 1.0 / mean_probs.size(0))
     fd_score = torch.norm(uniform - mean_probs, p=2).item()
+    print("Hard Counts:", hard_counts.tolist())
     return fd_score
 
-def evaluate_all_combinations(image_folders, log_path="clip_fd_log.txt"):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load("ViT-B/32", device=device)
-    model.eval()
-
-    categories = {
-        # "Race": [
-        #     "a photo of an asian person",
-        #     "a photo of an indian person",
-        #     "a photo of a black person",
-        #     "a photo of a white person"
-        # ],
-        # "Age": [
-        #     "a photo of a young person",
-        #     "a photo of an adult person",
-        #     "a photo of an old person"
-        # ],
-        "Gender": [
-            "male",
-            "female"
-        ],
-        # "Race+Age": [
-        #     f"a photo of a {age} {race} person"
-        #     for race in ["asian", "indian", "black", "white"]
-        #     for age in ["young", "adult", "old"]
-        # ],
-        # "Race+Gender": [
-        #     f"a photo of an {race} {gender}" if race in ["asian", "indian"] else f"a photo of a {race} {gender}"
-        #     for race in ["asian", "indian", "black", "white"]
-        #     for gender in ["man", "woman"]
-        # ],
-        # "Age+Gender": [
-        #     f"a photo of a {age} {gender}"
-        #     for age in ["young", "adult", "old"]
-        #     for gender in ["man", "woman"]
-        # ],
-        # "Race+Age+Gender": [
-        #     f"a photo of a {age} {race} {gender}" if race not in ["asian", "indian"] else f"a photo of an {age} {race} {gender}"
-        #     for race in ["asian", "indian", "black", "white"]
-        #     for age in ["young", "adult", "old"]
-        #     for gender in ["man", "woman"]
-        # ]
-        # "DogvsCat" : [
-        #     "photo of a dog",
-        #     "photo of a cat"
-        # ]
-    }
-
-    logs = ["📊 FD Score Results:\n"]
-    for category, prompts in categories.items():
-        text_tokens = clip.tokenize(prompts).to(device)
-        with torch.no_grad():
-            text_features = model.encode_text(text_tokens)
-            text_features = F.normalize(text_features, dim=-1)
-
-        for label, path in image_folders.items():
-            score = compute_fd_score(path, text_features, model, preprocess, device)
-            logs.append(f"[{label}] {category:<20}: FD = {score:.4f}")
-
-    with open(log_path, "w") as f:
-        f.write("\n".join(logs))
-    print(f"✅ Results logged to: {log_path}")
-
-# Define your input image directories
-image_folders = {
-    "Org": "face_outputs/original",
-    "Ours": "face_outputs/check"
-}
-
-evaluate_all_combinations(image_folders)
-
-# import os
-# import torch
-# import clip
-# from PIL import Image
-# from tqdm import tqdm
-# import torch.nn.functional as F
-
-# def compute_fd_score(image_folder, text_features, model, preprocess, device, categories):
-#     probs_list = []
-#     counts = torch.zeros(len(categories), dtype=torch.int32)
-#     image_files = sorted([f for f in os.listdir(image_folder) if f.endswith((".png", ".jpg"))])
-
-#     for fname in tqdm(image_files, desc=f"Evaluating {image_folder}"):
-#         img = Image.open(os.path.join(image_folder, fname)).convert("RGB")
-#         img_tensor = preprocess(img).unsqueeze(0).to(device)
-
-#         with torch.no_grad():
-#             image_feat = model.encode_image(img_tensor)
-#             image_feat = F.normalize(image_feat, dim=-1)
-#             logits = image_feat @ text_features.T
-#             probs = F.softmax(logits, dim=-1).squeeze(0)
-#             probs_list.append(probs.cpu())
-
-#             pred_idx = torch.argmax(probs).item()
-#             counts[pred_idx] += 1
-
-#     probs_tensor = torch.stack(probs_list)
-#     mean_probs = probs_tensor.mean(dim=0)
-#     uniform = torch.full_like(mean_probs, 1.0 / mean_probs.size(0))
-#     fd_score = torch.norm(uniform - mean_probs, p=2).item()
-#     return fd_score, counts.tolist()
-
-# def evaluate_all_combinations(image_folders, log_path="clip_fd_log.txt"):
-#     device = "cuda" if torch.cuda.is_available() else "cpu"
-#     model, preprocess = clip.load("ViT-B/32", device=device)
-#     model.eval()
-
-#     categories = {
-#         "DogvsCat": [
-#             "puppy",
-#             "senior"
-#         ]
-#     }
-
-#     logs = ["📊 FD Score & Class Counts:\n"]
-#     for category, prompts in categories.items():
-#         text_tokens = clip.tokenize(prompts).to(device)
-#         with torch.no_grad():
-#             text_features = model.encode_text(text_tokens)
-#             text_features = F.normalize(text_features, dim=-1)
-
-#         for label, path in image_folders.items():
-#             score, counts = compute_fd_score(path, text_features, model, preprocess, device, prompts)
-#             logs.append(f"[{label}] {category:<15}: FD = {score:.4f} | puppy = {counts[0]}, senior = {counts[1]}")
-
-#     with open(log_path, "w") as f:
-#         f.write("\n".join(logs))
-#     print(f"✅ Results logged to: {log_path}")
-
-# # --- INPUT ---
-# image_folders = {
-#     "Original": "pet_outputs/original",
-#     "Debiased": "pet_outputs/check"
-# }
-
-# evaluate_all_combinations(image_folders)
+# --- Run on Your Folder ---
+path = "rebuttal/faces/debiased_3"
+fd = compute_fd(path)
+print(f"FD: {fd} ")

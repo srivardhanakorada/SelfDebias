@@ -1,60 +1,36 @@
+# from cleanfid import fid #type:ignore
+# import os
+
+# # path to CelebA-HQ dataset
+# base_path = "new_final_results/gender/original"
+# root_dir = "new_final_results/gender/val_debiased"
+
+# src_paths = [
+#     os.path.join(base_path, d)
+#     for d in os.listdir(base_path)
+#     if os.path.isdir(os.path.join(base_path, d))
+# ]
+
+# test_paths = [
+#     os.path.join(root_dir, d)
+#     for d in os.listdir(root_dir)
+#     if os.path.isdir(os.path.join(root_dir, d))
+# ]
+
+# fid_scores = []
+
+# for base,path in zip(src_paths,test_paths):
+#     score = fid.compute_fid(base, path)
+#     fid_scores.append((path, score))
+#     print(f"FID score for {path}: {score}")
+
+from cleanfid import fid #type:ignore
 import os
-import torch
-import numpy as np
-from PIL import Image
-from torchvision.models import inception_v3
-from torchvision import transforms
-from tqdm import tqdm
-from scipy import linalg
+base_path = "rebuttal/faces/original_32"
+root_dir = "rebuttal/faces/debiased_3"
+score = fid.compute_fid(base_path, root_dir)
+print(f"FID score for {root_dir}: {score}")
 
-def get_inception_model(device="cuda"):
-    model = inception_v3(pretrained=True, transform_input=False).to(device)
-    model.eval()
-    # Remove last FC layer → keep pool3 features
-    model.fc = torch.nn.Identity()
-    return model
-
-@torch.no_grad()
-def extract_features(folder, model, device, batch_size=32):
-    transform = transforms.Compose([
-        transforms.Resize(299),
-        transforms.CenterCrop(299),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5]*3, [0.5]*3),
-    ])
-
-    imgs = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
-    features = []
-
-    for i in tqdm(range(0, len(imgs), batch_size), desc=f"Extracting from {folder}"):
-        batch_paths = imgs[i:i+batch_size]
-        batch = [transform(Image.open(p).convert("RGB")) for p in batch_paths]
-        batch = torch.stack(batch).to(device)
-        feats = model(batch)  # [B, 2048]
-        features.append(feats.cpu())
-
-    return torch.cat(features, dim=0).numpy()
-
-def calculate_fid(mu1, sigma1, mu2, sigma2):
-    diff = mu1 - mu2
-    covmean, _ = linalg.sqrtm(sigma1 @ sigma2, disp=False)
-    if np.iscomplexobj(covmean):
-        covmean = covmean.real
-    fid = diff @ diff + np.trace(sigma1 + sigma2 - 2 * covmean)
-    return float(fid)
-
-def compute_fid(folder1, folder2, device="cuda"):
-    model = get_inception_model(device)
-
-    feats1 = extract_features(folder1, model, device)
-    feats2 = extract_features(folder2, model, device)
-
-    mu1, sigma1 = feats1.mean(axis=0), np.cov(feats1, rowvar=False)
-    mu2, sigma2 = feats2.mean(axis=0), np.cov(feats2, rowvar=False)
-
-    fid_score = calculate_fid(mu1, sigma1, mu2, sigma2)
-    return fid_score
-
-# Example usage:
-fid = compute_fid("face_outputs/original", "face_outputs/debiased_simple")
-print("FID:", fid)
+# from cleanfid import fid
+# score = fid.compute_fid("final_results/ddim_outputs/debiased_ddim", dataset_name="Cel", dataset_res=1024, dataset_split="trainval")
+# print(score)

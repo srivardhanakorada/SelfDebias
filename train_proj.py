@@ -54,7 +54,7 @@ def nt_xent_loss(z_pred, z1, z2, temperature=0.1):
     pos_sim = F.cosine_similarity(z_pred, z1, dim=-1) + F.cosine_similarity(z_pred, z2, dim=-1)
     return -pos_sim.mean() / temperature
 
-def plot_umap(preds, targets, epoch, out_dir="umap_plots/pets"):
+def plot_umap(preds, targets, epoch, out_dir="rebuttal/umap_plots/faces"):
     os.makedirs(out_dir, exist_ok=True)
     sample_size = min(500, len(preds))
     idxs = np.random.choice(len(preds), sample_size, replace=False)
@@ -114,11 +114,11 @@ def train_contrastive(model, dataloader, optimizer, epochs=10, device="cuda"):
         if preds_t25:
             plot_umap(np.vstack(preds_t25), np.vstack(targets_t25), epoch)
 
-        os.makedirs("checkpoints", exist_ok=True)
-        torch.save(model.state_dict(), f"checkpoints/pet.pt")
+        os.makedirs("rebuttal/checkpoints", exist_ok=True)
+        torch.save(model.state_dict(), f"rebuttal/checkpoints/device.pt")
 
 # === CONFIGURATION ===
-root_dir = "pet_data/contrastive_triplets"
+root_dir = "/home/teja/three/vardhan/wacv_work/final_data/face/contrastive_triplets"
 dataset = ContrastiveTripletDataset(root_dir)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4)
 

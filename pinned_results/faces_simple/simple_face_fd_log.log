@@ -1,9 +1,0 @@
-📊 Face Fairness Evaluation Results:
-
-🔍 Category: Gender
---------------------------------------------------
-  Original - FD: 0.0123
-Counts: man:18, woman:110
-  Debiased - FD: 0.0014
-Counts: man:62, woman:66
---------------------------------------------------

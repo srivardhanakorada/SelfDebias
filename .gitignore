@@ -28,3 +28,9 @@ clustered_images
 clustered_images_faces
 train_data
 face_data
+h_data
+h_plots
+output_images
+new_logs
+demo
+rebuttal

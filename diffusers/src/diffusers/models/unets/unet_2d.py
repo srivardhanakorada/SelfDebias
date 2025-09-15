@@ -16,12 +16,15 @@ from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+import os
 
 from ...configuration_utils import ConfigMixin, register_to_config
 from ...utils import BaseOutput
 from ..embeddings import GaussianFourierProjection, TimestepEmbedding, Timesteps
 from ..modeling_utils import ModelMixin
 from .unet_2d_blocks import UNetMidBlock2D, get_down_block, get_up_block
+from .new_helper_hclassify_ddim import compute_distribution_gradients
+
 
 
 @dataclass
@@ -253,6 +256,11 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         timestep: Union[torch.Tensor, float, int],
         class_labels: Optional[torch.Tensor] = None,
         return_dict: bool = True,
+        scaling_strength: int = 1,
+        loss_strength: int = 1,
+        checkpoint_path: Union[str, os.PathLike] = os.getcwd(),
+        mode: str = "distribution",
+        ret_h: bool = False,
     ) -> Union[UNet2DOutput, Tuple]:
         r"""
         The [`UNet2DModel`] forward method.
@@ -271,6 +279,11 @@ class UNet2DModel(ModelMixin, ConfigMixin):
                 If `return_dict` is True, an [`~models.unets.unet_2d.UNet2DOutput`] is returned, otherwise a `tuple` is
                 returned where the first element is the sample tensor.
         """
+        store = None
+        probs =  None
+        centroid_path = "/home/teja/three/shrikrishna/centroids/sweighted_centroids_celebA.pt"
+        all_timesteps = [1, 21, 41, 61, 81, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321, 341, 361, 381, 401, 421, 441, 461, 481, 501, 521, 541, 561, 581, 601, 621, 641, 661, 681, 701, 721, 741, 761, 781, 801, 821, 841, 861, 881, 901, 921, 941, 961, 981]
+        current_step_index = all_timesteps.index(int(timestep.item())+1) #will introduce later
         # 0. center input if necessary
         if self.config.center_input_sample:
             sample = 2 * sample - 1.0
@@ -324,6 +337,25 @@ class UNet2DModel(ModelMixin, ConfigMixin):
         # 4. mid
         if self.mid_block is not None:
             sample = self.mid_block(sample, emb)
+        
+        h = sample.clone().detach()
+        if loss_strength > 1 and timestep not in [981,961,941,921]:
+            if not os.path.exists(checkpoint_path):
+                raise IOError("Classifier checkpoint not found", checkpoint_path)
+            if mode == "distribution":
+                grads, probs = compute_distribution_gradients(
+                    sample=sample,
+                    timestep=current_step_index,
+                    checkpoint_path=checkpoint_path,
+                    centroid_path=centroid_path,
+                    loss_strength=loss_strength,
+                    temperature=8,
+                )
+                store = (grads*(scaling_strength*10**4)).clone().detach()
+            else:
+                raise NotImplementedError
+            sample = sample.detach() - grads * (scaling_strength *  10**4)
+        
 
         # 5. up
         skip_sample = None
@@ -349,6 +381,7 @@ class UNet2DModel(ModelMixin, ConfigMixin):
             sample = sample / timesteps
 
         if not return_dict:
-            return (sample,)
+            if ret_h: return sample, h, probs
+            return sample,None, None
 
         return UNet2DOutput(sample=sample)
