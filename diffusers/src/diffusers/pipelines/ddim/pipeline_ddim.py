@@ -15,7 +15,9 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
-
+import os
+import matplotlib.pyplot as plt
+import numpy as np
 from ...models import UNet2DModel
 from ...schedulers import DDIMScheduler
 from ...utils import is_torch_xla_available
@@ -53,7 +55,7 @@ class DDIMPipeline(DiffusionPipeline):
 
         # make sure scheduler can always be converted to DDIM
         scheduler = DDIMScheduler.from_config(scheduler.config)
-
+        self.folder = '/home/teja/three/shrikrishna/clip_debiasing_gen_models/ddim_outputs'
         self.register_modules(unet=unet, scheduler=scheduler)
 
     @torch.no_grad()
@@ -66,6 +68,12 @@ class DDIMPipeline(DiffusionPipeline):
         use_clipped_model_output: Optional[bool] = None,
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
+        scaling_strength: int = 1,
+        loss_strength: int = 1,
+        checkpoint_path: Union[str, os.PathLike] = os.getcwd(),
+        mode: str = "distribution",
+        ret_h: bool = False,
+        batch_no: int = 0
     ) -> Union[ImagePipelineOutput, Tuple]:
         r"""
         The call function to the pipeline for generation.
@@ -137,15 +145,18 @@ class DDIMPipeline(DiffusionPipeline):
                 f" size of {batch_size}. Make sure the batch size matches the length of the generators."
             )
 
-        image = randn_tensor(image_shape, generator=generator, device=self._execution_device, dtype=self.unet.dtype)
-
-        # set step values
+        image = randn_tensor(image_shape, generator=generator, device=self._execution_device, dtype=self.unet.dtype)        # set step values
         self.scheduler.set_timesteps(num_inference_steps)
+        h_vecs = []
+        grad_list = [] #do we need this??
+        all_probs = []
 
-        for t in self.progress_bar(self.scheduler.timesteps):
+        for t in self.scheduler.timesteps:
             # 1. predict noise model_output
-            model_output = self.unet(image, t).sample
-
+            model_output, h, probs = self.unet(image, t, return_dict=False, ret_h=ret_h, checkpoint_path=checkpoint_path,scaling_strength=scaling_strength, loss_strength=loss_strength, mode=mode)
+            if probs is not None:
+                all_probs.append(probs)
+            h_vecs.append(h)
             # 2. predict previous mean of image x_t-1 and add variance depending on eta
             # eta corresponds to η in paper and should be between [0, 1]
             # do x_t -> x_t-1
@@ -156,6 +167,22 @@ class DDIMPipeline(DiffusionPipeline):
             if XLA_AVAILABLE:
                 xm.mark_step()
 
+        
+        if len(all_probs) > 0:
+
+            all_probs = np.stack(all_probs)
+
+            plt.figure(figsize=(10, 4))
+            plt.plot(all_probs[:, 0], label="DDIM → Cluster 0")
+            plt.plot(all_probs[:, 1], label="DDIM → Cluster 1")
+            plt.xlabel("Timestep")
+            plt.ylabel("Avg. Cluster Probability")
+            plt.title("Cluster Identity Consistency Over Time")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(self.folder+"/cluster_consistency_plot/cluster_consistency_plot_"+str(batch_no)+".png")
+        
         image = (image / 2 + 0.5).clamp(0, 1)
         image = image.cpu().permute(0, 2, 3, 1).numpy()
         if output_type == "pil":
@@ -164,4 +191,6 @@ class DDIMPipeline(DiffusionPipeline):
         if not return_dict:
             return (image,)
 
-        return ImagePipelineOutput(images=image)
+        if ret_h:
+            return ImagePipelineOutput(images=image), h_vecs
+        return ImagePipelineOutput(images=image), None
