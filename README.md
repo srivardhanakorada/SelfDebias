@@ -32,7 +32,7 @@ SelfDebias operates in the semantic latent space (*h-space*) of diffusion models
    - Minimizes KL divergence between predicted distributions and a depth-weighted uniform target.  
    - Backpropagates this signal into the h-space mid-generation, steering outputs toward balanced distributions.
 
-This approach requires **no retraining**, **no external supervision**, and is compatible with any UNet-based diffusion model:contentReference[oaicite:0]{index=0}.
+This approach requires **no retraining**, **no external supervision**, and is compatible with any UNet-based diffusion model.
 
 ---
 
@@ -41,7 +41,7 @@ This approach requires **no retraining**, **no external supervision**, and is co
 - **First fully unsupervised debiasing method** for diffusion models at test time.  
 - Generalizes across **demographics** (gender, race, age) and **abstract concepts** (e.g., “a peaceful moment”, “fantasy creature”).  
 - Outperforms supervised baselines in reducing **Fairness Discrepancy (FD)** while maintaining high image quality (FID).  
-- Works across different prompts, diffusion architectures, and even unconditional models:contentReference[oaicite:1]{index=1}:contentReference[oaicite:2]{index=2}.  
+- Works across different prompts, diffusion architectures, and even unconditional models.  
 - Enables steering toward **arbitrary target distributions** (e.g., simulating demographic skews).
 
 ---
@@ -51,4 +51,4 @@ This approach requires **no retraining**, **no external supervision**, and is co
 - On **face generation**, SelfDebias achieves **best FD scores** while preserving FID.  
 - On **occupation prompts** (Winobias), it significantly reduces gender skew.  
 - On **abstract prompts**, it balances outputs without predefined concept axes.  
-- Demonstrates **encoder- and model-agnostic generalization** (e.g., works with OpenCLIP, unconditional DDIM):contentReference[oaicite:3]{index=3}:contentReference[oaicite:4]{index=4}.
+- Demonstrates **encoder- and model-agnostic generalization** (e.g., works with OpenCLIP, unconditional DDIM).
